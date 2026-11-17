@@ -141,7 +141,7 @@ local function makeTargetSpawner(ctx: Context, interval: number, lifetime: numbe
 			button:Destroy()
 		end)
 	end
-	return function(t: number)
+	return function(_dt: number, t: number)
 		if t >= nextSpawn then
 			nextSpawn = t + interval * (0.8 + math.random() * 0.4)
 			spawn(t)

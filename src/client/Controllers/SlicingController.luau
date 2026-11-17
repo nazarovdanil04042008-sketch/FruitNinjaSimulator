@@ -6,6 +6,7 @@
 --   * instant local feedback (halves, juice, katana effects, blade trail), server confirms rewards
 --   * slicing HUD: hearts, round coins, combo / frenzy banners, leave button, round summary
 
+local GuiService = game:GetService("GuiService")
 local Players = game:GetService("Players")
 local ProximityPromptService = game:GetService("ProximityPromptService")
 local RunService = game:GetService("RunService")
@@ -396,6 +397,14 @@ local function setHearts(value: number)
 	heartsLabel.Text = text
 end
 
+-- Hide the mobile thumbstick / jump button while slicing (the character is frozen anyway),
+-- otherwise swipes that start on them are swallowed as GUI input.
+local function setTouchControls(enabled: boolean)
+	pcall(function()
+		GuiService.TouchControlsEnabled = enabled
+	end)
+end
+
 local function restoreCamera()
 	local camera = workspace.CurrentCamera
 	camera.CameraType = Enum.CameraType.Custom
@@ -431,6 +440,7 @@ local function onSessionStarted(arenaId: string, padIndex: number, startHearts: 
 	setHearts(startHearts)
 	SlicingController.Active = true
 	ProximityPromptService.Enabled = false
+	setTouchControls(false)
 	hudGui.Enabled = true
 	hudScale.Scale = UIKit.Scale
 	hintLabel.Visible = true
@@ -460,6 +470,7 @@ local function onSessionEnded(data: any)
 	end
 	frenzyLabel.Visible = false
 	restoreCamera()
+	setTouchControls(true)
 	ProximityPromptService.Enabled = true
 	SlicingController.ActiveChanged:Fire(false)
 
