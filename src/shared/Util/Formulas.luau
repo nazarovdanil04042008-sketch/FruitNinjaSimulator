@@ -8,6 +8,7 @@ local Katanas = require(Config.Katanas)
 local Belts = require(Config.Belts)
 local Trails = require(Config.Trails)
 local Creatures = require(Config.Creatures)
+local Buildings = require(Config.Buildings)
 
 local Formulas = {}
 
@@ -24,6 +25,7 @@ export type Derived = {
 	ComboWindow: number,
 	PetSlots: number,
 	CreatureBonus: { Coins: number, Xp: number, Speed: number, Training: number },
+	BuildingBonus: { Coins: number, Xp: number, Speed: number, Training: number },
 }
 
 -- XP needed to go from `level` to `level + 1`.
@@ -67,6 +69,25 @@ function Formulas.CreatureBonus(profile: any): { Coins: number, Xp: number, Spee
 	return total
 end
 
+-- Sum of bonuses from buildings placed on the player's plot (each type counts up to its MaxPlaced).
+function Formulas.BuildingBonus(profile: any): { Coins: number, Xp: number, Speed: number, Training: number }
+	local total = { Coins = 0, Xp = 0, Speed = 0, Training = 0 }
+	local counts: { [string]: number } = {}
+	for _, item in profile.Buildings or {} do
+		local def = Buildings.Get(item.Id)
+		if def then
+			counts[def.Id] = (counts[def.Id] or 0) + 1
+			if counts[def.Id] <= def.MaxPlaced then
+				total.Coins += def.Bonus.Coins or 0
+				total.Xp += def.Bonus.Xp or 0
+				total.Speed += def.Bonus.Speed or 0
+				total.Training += def.Bonus.Training or 0
+			end
+		end
+	end
+	return total
+end
+
 function Formulas.Compute(profile: any): Derived
 	local stats = profile.Stats or {}
 	local speed = stats.Speed or 0
@@ -78,8 +99,9 @@ function Formulas.Compute(profile: any): Derived
 	local belt = Belts.Get(profile.EquippedBelt)
 	local trail = Trails.Get(profile.EquippedTrail)
 	local creature = Formulas.CreatureBonus(profile)
+	local building = Formulas.BuildingBonus(profile)
 
-	local speedMultiplier = belt.SpeedMultiplier * (trail and trail.SpeedMultiplier or 1) * (1 + creature.Speed)
+	local speedMultiplier = belt.SpeedMultiplier * (trail and trail.SpeedMultiplier or 1) * (1 + creature.Speed + building.Speed)
 
 	local baseWalk = math.min(GameConfig.BaseWalkSpeed + speed * 0.3, GameConfig.MaxBaseWalkSpeed)
 	local walkSpeed = math.min(baseWalk * speedMultiplier, GameConfig.MaxWalkSpeed)
@@ -88,9 +110,9 @@ function Formulas.Compute(profile: any): Derived
 	spawnInterval = math.max(spawnInterval, GameConfig.MinSpawnInterval)
 
 	return {
-		CoinMultiplier = (1 + strength * 0.04) * katana.CoinMultiplier * (1 + creature.Coins),
-		XpMultiplier = (1 + (trainingLevel - 1) * 0.05) * (1 + creature.Xp),
-		TrainingMultiplier = belt.TrainingMultiplier * (1 + creature.Training) * (1 + (trainingLevel - 1) * 0.02),
+		CoinMultiplier = (1 + strength * 0.04) * katana.CoinMultiplier * (1 + creature.Coins + building.Coins),
+		XpMultiplier = (1 + (trainingLevel - 1) * 0.05) * (1 + creature.Xp + building.Xp),
+		TrainingMultiplier = belt.TrainingMultiplier * (1 + creature.Training + building.Training) * (1 + (trainingLevel - 1) * 0.02),
 		SpeedMultiplier = speedMultiplier,
 		WalkSpeed = walkSpeed,
 		JumpPower = math.min(GameConfig.BaseJumpPower + agility * 0.2, GameConfig.MaxJumpPower),
@@ -100,6 +122,7 @@ function Formulas.Compute(profile: any): Derived
 		ComboWindow = math.min(0.45 + agility * 0.003, 0.8),
 		PetSlots = Formulas.PetSlots(profile.Level or 1),
 		CreatureBonus = creature,
+		BuildingBonus = building,
 	}
 end
 

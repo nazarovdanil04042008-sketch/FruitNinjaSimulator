@@ -21,6 +21,10 @@ local GameConfig = require(Config.GameConfig)
 local Formulas = require(Shared.Util.Formulas)
 local Format = require(Shared.Util.Format)
 local Trajectory = require(Shared.Util.Trajectory)
+local Buildings = require(Config.Buildings)
+local PlotGrid = require(Shared.Util.PlotGrid)
+local ModelBuilder = require(Shared.Util.ModelBuilder)
+local JapaneseBuilder = require(Shared.Util.JapaneseBuilder)
 
 local SelfTest = {}
 
@@ -150,6 +154,51 @@ function SelfTest.Run()
 	for _, loc in Locations.List do
 		check("location arena " .. loc.Id, loc.ArenaId == nil or Arenas.Get(loc.ArenaId) ~= nil)
 	end
+
+	-- Buildings / plots
+	for _, def in Buildings.List do
+		check("building fits plot " .. def.Id, def.Width <= PlotGrid.Size and def.Depth <= PlotGrid.Size)
+		check("building max placed " .. def.Id, def.MaxPlaced >= 1)
+	end
+	check("plots exist", #Buildings.Plots >= 1)
+	local placed = { { Uid = "b1", Id = "ZenGarden", X = 0, Z = 0, R = 0 } }
+	check("plot overlap blocked", not PlotGrid.CanPlace(placed, "StoneLantern", 1, 1, 0))
+	check("plot free cell ok", PlotGrid.CanPlace(placed, "StoneLantern", 5, 5, 0))
+	check("plot bounds", not PlotGrid.CanPlace({}, "Pagoda", PlotGrid.Size - 2, 0, 0))
+	check("plot rotation footprint", PlotGrid.CanPlace({}, "Bridge", 0, PlotGrid.Size - 2, 1))
+
+	-- Every procedural model must build without errors (catches typos in the builders)
+	local function tryBuild(name: string, fn: () -> Instance?)
+		local ok, result = pcall(fn)
+		check("model builds " .. name, ok and result ~= nil, not ok and tostring(result) or nil)
+		if ok and result then
+			result:Destroy()
+		end
+	end
+	for _, def in Creatures.List do
+		tryBuild("creature " .. def.Id, function()
+			return ModelBuilder.Creature(def.Id)
+		end)
+	end
+	for _, def in Buildings.List do
+		tryBuild("building " .. def.Id, function()
+			local model = ModelBuilder.Building(def.Id)
+			local _, size = model:GetBoundingBox()
+			check("building footprint " .. def.Id, size.X <= def.Width * 4 + 6 and size.Z <= def.Depth * 4 + 6 or size.X <= def.Depth * 4 + 6, tostring(size))
+			return model
+		end)
+	end
+	for _, def in Katanas.List do
+		tryBuild("katana " .. def.Id, function()
+			return ModelBuilder.Katana(def.Id)
+		end)
+	end
+	tryBuild("mountain", function()
+		return JapaneseBuilder.Mountain(60, 20, 2)
+	end)
+	tryBuild("egg", function()
+		return ModelBuilder.Egg(Color3.new(1, 1, 1), Color3.new(1, 0, 0), nil, 3)
+	end)
 
 	-- Formatting
 	check("format short 999", Format.Short(999) == "999", Format.Short(999))

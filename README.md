@@ -1,6 +1,6 @@
 # 🍉 Fruit Ninja Simulator (Roblox)
 
-A complete, playable Roblox simulator: **Fruit-Ninja-style slicing** + stat progression + katanas, belts and trails + **interactive training mini-games** + **eggs that hatch into fruit "brainrot" creatures** across 10 rarities. Everything is written in Luau and generated from code — the map, the UI and every model — so the game runs from a blank Baseplate with no uploaded assets.
+A complete, playable Roblox simulator set in a Japanese ninja world: **Fruit-Ninja-style slicing** + stat progression + katanas, belts and trails + **interactive training mini-games** + **eggs that hatch into fruit "brainrot" creatures** across 10 rarities. Everything is written in Luau and generated from code — the map, the UI and every model — so the game runs from a blank Baseplate with no uploaded assets.
 
 ## Features
 
@@ -13,6 +13,9 @@ A complete, playable Roblox simulator: **Fruit-Ninja-style slicing** + stat prog
 | 🏋️ Training | 5 mini-games: Arrow Rush (speed), Power Lift (strength), Reflex Targets (agility), Dummy Slice (katana), Master Gauntlet (special). Scaling difficulty, cooldowns, grades |
 | 🥚 Eggs & creatures | Slice eggs → pending egg with a live countdown (20 s – 10 min) → hatch reveal animation. 20 original creatures, 10 rarities (Common → Secret), passive bonuses, equip / equip best / compare / release, collection index with undiscovered "???" entries |
 | ✨ Trails | 10 trails with colours, particles and speed multipliers |
+| 🏯 Ninja Village | Japanese-style world (torii, pagoda, sakura, lanterns, bell tower, koi pond, zen garden, Mount Fuji). Every player gets a plot and builds 14 Japanese buildings on a grid (ghost preview, rotate, pick up) for passive bonuses |
+| 🤝 Trading | Player-to-player trades of creatures and coins: request → offer → Ready → Confirm with a safety countdown; validated and saved by the server |
+| 🎨 Custom models | Drop your own 3D models into `assets/` and they replace the procedural creatures, buildings or katanas (see `docs/ASSETS.md`) |
 | 🖥️ UI | HUD (level, XP, coins, speed, katana, belt, trail), 9 menus, purchase confirmations, toasts, stat popups, level-up banners. Scales for phones, tablets and PC |
 | 💾 Saving | DataStore with session locking, `UpdateAsync`, retries, autosave, save on leave / shutdown, Studio offline fallback |
 | 🛡️ Security | Server-authoritative currency, rewards, purchases, upgrades, hatching and progression; validated remotes, rate limits |
@@ -52,7 +55,9 @@ src/
     Controllers/              State, SlicingController, FruitVisuals, TrainingGames, HatchReveal,
                               PetController, WorldController
     UI/                       Theme, UIKit, Effects, Viewport, HUD, Windows/*
+assets/     -> ReplicatedStorage.Assets   (optional custom models: Creatures/, Buildings/, Katanas/)
 docs/
+  ASSETS.md                   how to use your own 3D models (Russian)
   ARCHITECTURE.md             how the systems fit together, remotes, security model, data schema
   STUDIO_SETUP.md             manual placement guide + test checklist
 ```

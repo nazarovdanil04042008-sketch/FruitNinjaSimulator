@@ -17,6 +17,8 @@
 | `ShopService` | BuyUpgrade (One / Ten / Max), Buy/Equip Katana, Belt, Trail |
 | `EggService` | AddEgg (from slicing), HatchEgg, SkipEgg, HatchAllReady, Equip / Unequip / EquipBest / Release creatures, rarity rolls, "egg ready" notifications, server-wide announcements for Diamond+ hatches |
 | `SlicingService` | Rounds, pad assignment, wave scheduler, slice validation, combos, frenzy, bombs and hearts, round summary |
+| `BuildingService` | Ninja Village plots (one per player, 8 per server), BuyBuilding / PlaceBuilding / MoveBuilding / RemoveBuilding / TeleportToPlot, spawns building models; grid rules shared with the client via `Util/PlotGrid` |
+| `TradeService` | Trade requests, offers, Ready/Confirm with a 3 s safety lock, atomic swap with full re-validation, immediate save of both players |
 | `TrainingService` | Start / Finish / Cancel training with one-time tokens, duration and score validation, cooldowns, rewards |
 
 ## Client modules
@@ -45,7 +47,7 @@
 | `SessionStarted` / `SessionEnded` | S→C | pad, hearts / summary | – |
 | `Notify`, `StatPopup`, `LevelUp`, `HatchReveal` | S→C | feedback | – |
 
-**Action names:** `Teleport`, `BuyUpgrade`, `BuyKatana`, `EquipKatana`, `BuyBelt`, `EquipBelt`, `BuyTrail`, `EquipTrail`, `HatchEgg`, `SkipEgg`, `HatchAllReady`, `EquipCreature`, `UnequipCreature`, `EquipBest`, `ReleaseCreature`, `StartTraining`, `FinishTraining`, `CancelTraining`, `GetTrainingCooldowns`.
+**Action names:** `BuyBuilding`, `PlaceBuilding`, `MoveBuilding`, `RemoveBuilding`, `TeleportToPlot`, `TradeRequest`, `TradeRespond`, `TradeSetOffer`, `TradeReady`, `TradeConfirm`, `TradeCancel`, `Teleport`, `BuyUpgrade`, `BuyKatana`, `EquipKatana`, `BuyBelt`, `EquipBelt`, `BuyTrail`, `EquipTrail`, `HatchEgg`, `SkipEgg`, `HatchAllReady`, `EquipCreature`, `UnequipCreature`, `EquipBest`, `ReleaseCreature`, `StartTraining`, `FinishTraining`, `CancelTraining`, `GetTrainingCooldowns`.
 
 ## Slicing: why it is smooth *and* exploit-resistant
 1. The server picks each object and its launch parameters, stamped with `workspace:GetServerTimeNow()`.
@@ -68,6 +70,7 @@ profile = {
   Creatures = { [uid] = { Id, Obtained } }, EquippedCreatures = { uid… },
   Discovered = { [creatureId] = true },
   Eggs = { { Uid, EggId, HatchAt } … },            -- HatchAt = unix time, so eggs incubate offline
+  BuildInventory = { [buildingId] = count }, Buildings = { { Uid, Id, X, Z, R } … },  -- village
   NextUid, Totals = { FruitsSliced, EggsHatched, BestCombo, CoinsEarned, BombsHit, TrainingsDone },
   LastJoin,
 }

@@ -17,6 +17,7 @@ local list: { Location } = {
 	{ Id = "Spawn", DisplayName = "Spawn", Emoji = "🏠", Position = Vector3.new(0, 3, 10), Color = Color3.fromRGB(255, 200, 70) },
 	{ Id = "Dojo", DisplayName = "Training Dojo", Emoji = "🥋", Position = Training.DojoOrigin + Vector3.new(0, 3, 22), Color = Color3.fromRGB(255, 110, 90) },
 	{ Id = "Shops", DisplayName = "Shops", Emoji = "🛒", Position = Vector3.new(-190, 3, 10), Color = Color3.fromRGB(90, 200, 255) },
+	{ Id = "Village", DisplayName = "Ninja Village", Emoji = "🏯", Position = Vector3.new(-194, 3, 122), Color = Color3.fromRGB(220, 70, 60) },
 	{ Id = "Hatchery", DisplayName = "Egg Hatchery", Emoji = "🥚", Position = Vector3.new(0, 3, 160), Color = Color3.fromRGB(255, 160, 220) },
 }
 

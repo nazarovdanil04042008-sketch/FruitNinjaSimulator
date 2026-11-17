@@ -18,6 +18,9 @@
 --   StatPopup(statName, amount)    "+3 Speed!" feedback
 --   HatchReveal(creatureId, isNew, uid)
 --   LevelUp(newLevel, coinReward)
+--   TradeInvite(fromUserId, fromName)   someone wants to trade with you
+--   TradeUpdate(state)                  current trade window state
+--   TradeClosed(reason, completed)      trade ended
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -37,6 +40,9 @@ Net.Events = {
 	"StatPopup",
 	"HatchReveal",
 	"LevelUp",
+	"TradeInvite",
+	"TradeUpdate",
+	"TradeClosed",
 }
 
 Net.Functions = {

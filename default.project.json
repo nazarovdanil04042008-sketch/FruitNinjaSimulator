@@ -1,10 +1,14 @@
 {
   "name": "FruitNinjaSimulator",
+  "globIgnorePaths": ["**/.gitkeep"],
   "tree": {
     "$className": "DataModel",
     "ReplicatedStorage": {
       "Shared": {
         "$path": "src/shared"
+      },
+      "Assets": {
+        "$path": "assets"
       }
     },
     "ServerScriptService": {

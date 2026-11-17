@@ -131,6 +131,10 @@ function ProgressionService.SetFrozen(player: Player, isFrozen: boolean)
 	ProgressionService.ApplyCharacterStats(player)
 end
 
+function ProgressionService.IsFrozen(player: Player): boolean
+	return frozen[player] == true
+end
+
 function ProgressionService.ApplyCharacterStats(player: Player)
 	local profile = DataService.Get(player)
 	local character = player.Character

@@ -27,6 +27,8 @@ local Trails = require(Shared.Config.Trails)
 local Creatures = require(Shared.Config.Creatures)
 local Eggs = require(Shared.Config.Eggs)
 local Formulas = require(Shared.Util.Formulas)
+local Buildings = require(Shared.Config.Buildings)
+local PlotGrid = require(Shared.Util.PlotGrid)
 local Signal = require(Shared.Util.Signal)
 local Net = require(Shared.Util.Net)
 
@@ -65,6 +67,8 @@ local function newTemplate()
 		EquippedCreatures = {}, -- { uid, ... }
 		Discovered = {}, -- creatureId -> true
 		Eggs = {}, -- { { Uid, EggId, HatchAt }, ... }
+		BuildInventory = {}, -- buildingId -> count bought but not placed
+		Buildings = {}, -- placed on the plot: { { Uid, Id, X, Z, R }, ... }
 		NextUid = 1,
 		Totals = { FruitsSliced = 0, EggsHatched = 0, BestCombo = 0, CoinsEarned = 0, BombsHit = 0, TrainingsDone = 0 },
 		LastJoin = 0,
@@ -163,6 +167,33 @@ local function sanitize(profile: any)
 		end
 	end
 	profile.Eggs = eggs
+
+	for id, count in profile.BuildInventory do
+		if not Buildings.Get(id) or type(count) ~= "number" or count < 1 then
+			profile.BuildInventory[id] = nil
+		else
+			profile.BuildInventory[id] = math.floor(math.min(count, 999))
+		end
+	end
+	local placed = {}
+	for _, item in profile.Buildings do
+		local def = type(item) == "table" and Buildings.Get(item.Id)
+		local valid = def
+			and type(item.Uid) == "string"
+			and type(item.X) == "number" and type(item.Z) == "number" and type(item.R) == "number"
+			and item.X % 1 == 0 and item.Z % 1 == 0 and item.R % 1 == 0
+			and #placed < Buildings.MaxPlacedTotal
+			and PlotGrid.CountPlaced(placed, item.Id) < def.MaxPlaced
+			and PlotGrid.CanPlace(placed, item.Id, item.X, item.Z, item.R % 4)
+		if valid then
+			item.R = item.R % 4
+			table.insert(placed, item)
+		elseif def then
+			-- invalid spot (e.g. grid size changed): give the building back instead of deleting it
+			profile.BuildInventory[item.Id] = (profile.BuildInventory[item.Id] or 0) + 1
+		end
+	end
+	profile.Buildings = placed
 	profile.NextUid = math.floor(sanitizeNumber(profile.NextUid, 1, 1))
 end
 
@@ -338,6 +369,11 @@ function DataService.Replicate(player: Player)
 		dirty[player] = true
 		pendingReplicate[player] = true
 	end
+end
+
+-- Immediate save (used after trades so both sides are persisted right away). Returns success.
+function DataService.SaveNow(player: Player): boolean
+	return save(player, false)
 end
 
 function DataService.NewUid(player: Player, prefix: string): string

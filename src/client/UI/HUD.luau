@@ -43,6 +43,8 @@ local MENU = {
 	{ Window = "Index", Emoji = "📖", Label = "Index", Color = C.Blue },
 	{ Window = "Training", Emoji = "🏋️", Label = "Training", Color = Color3.fromRGB(255, 110, 90) },
 	{ Window = "Teleport", Emoji = "🗺️", Label = "Teleport", Color = Color3.fromRGB(60, 200, 170) },
+	{ Window = "Build", Emoji = "🏯", Label = "Village", Color = Color3.fromRGB(220, 70, 60) },
+	{ Window = "Trade", Emoji = "🤝", Label = "Trade", Color = Color3.fromRGB(90, 200, 120) },
 }
 
 local function build(root: ScreenGui)
@@ -80,8 +82,8 @@ local function build(root: ScreenGui)
 		infoLabels[key] = UIKit.Label({ Text = "", Size = UDim2.new(1, 0, 0, 20), AlignX = Enum.TextXAlignment.Left, Font = Theme.BodyFont, LayoutOrder = i, Parent = infoCard, MaxTextSize = 18 })
 	end
 
-	-- Menu buttons (3 x 3)
-	menu = new("Frame", { Name = "Menu", BackgroundTransparency = 1, Size = UDim2.fromOffset(228, 228), Position = UDim2.fromOffset(10, 214), Parent = container })
+	-- Menu buttons (4 columns x 3 rows)
+	menu = new("Frame", { Name = "Menu", BackgroundTransparency = 1, Size = UDim2.fromOffset(304, 226), Position = UDim2.fromOffset(10, 214), Parent = container })
 	new("UIGridLayout", { CellSize = UDim2.fromOffset(70, 70), CellPadding = UDim2.fromOffset(8, 8), SortOrder = Enum.SortOrder.LayoutOrder, Parent = menu })
 	for i, entry in MENU do
 		local button = UIKit.Button({ Name = entry.Window, Text = "", Color = entry.Color, LayoutOrder = i, Radius = 16, Parent = menu,

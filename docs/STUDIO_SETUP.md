@@ -5,7 +5,8 @@ With Rojo you can skip this page: `default.project.json` produces exactly this l
 ## 1. Create the place
 1. Roblox Studio → **New → Baseplate**.
 2. *(For saving)* **File → Publish to Roblox**, then **Home → Game Settings → Security → Enable Studio Access to API Services**.
-3. Leave the default Baseplate and SpawnLocation alone: on first run `WorldBuilder` removes the default baseplate and disables the default spawn.
+3. **Home → Game Settings → Basic Info / Places → Max Players = 8.** The Ninja Village has 8 plots, one per player.
+4. Leave the default Baseplate and SpawnLocation alone: on first run `WorldBuilder` removes the default baseplate and disables the default spawn.
 
 ## 2. Script types
 In Studio, a file's **name suffix tells you its type**. Drop the suffix and `.luau` when naming the object:
@@ -27,6 +28,7 @@ ReplicatedStorage
     ├── Config                     (Folder)
     │   ├── Arenas                 (ModuleScript)
     │   ├── Belts                  (ModuleScript)
+    │   ├── Buildings              (ModuleScript)
     │   ├── Creatures              (ModuleScript)
     │   ├── Eggs                   (ModuleScript)
     │   ├── Fruits                 (ModuleScript)
@@ -41,22 +43,30 @@ ReplicatedStorage
     └── Util                       (Folder)
         ├── Format                 (ModuleScript)
         ├── Formulas               (ModuleScript)
+        ├── JapaneseBuilder        (ModuleScript)
         ├── ModelBuilder           (ModuleScript)
         ├── Net                    (ModuleScript)
+        ├── PlotGrid               (ModuleScript)
         ├── Signal                 (ModuleScript)
         └── Trajectory             (ModuleScript)
+└── Assets                         (Folder, optional: your own 3D models - see docs/ASSETS.md)
+    ├── Creatures                  (Folder)
+    ├── Buildings                  (Folder)
+    └── Katanas                    (Folder)
 
 ServerScriptService
 └── Server                         (Folder)
     ├── Main                       (Script)        <- src/server/Main.server.luau
     ├── Services                   (Folder)
     │   ├── ActionService          (ModuleScript)
+    │   ├── BuildingService        (ModuleScript)
     │   ├── DataService            (ModuleScript)
     │   ├── EggService             (ModuleScript)
     │   ├── EquipmentService       (ModuleScript)
     │   ├── ProgressionService     (ModuleScript)
     │   ├── ShopService            (ModuleScript)
     │   ├── SlicingService         (ModuleScript)
+    │   ├── TradeService           (ModuleScript)
     │   ├── TrainingService        (ModuleScript)
     │   └── WorldBuilder           (ModuleScript)
     └── Tests                      (Folder)
@@ -67,6 +77,7 @@ StarterPlayer
     └── Client                     (Folder)
         ├── Main                   (LocalScript)   <- src/client/Main.client.luau
         ├── Controllers            (Folder)
+        │   ├── BuildController    (ModuleScript)
         │   ├── FruitVisuals       (ModuleScript)
         │   ├── HatchReveal        (ModuleScript)
         │   ├── PetController      (ModuleScript)
@@ -81,11 +92,13 @@ StarterPlayer
             ├── UIKit              (ModuleScript)
             ├── Viewport           (ModuleScript)
             └── Windows            (Folder)
+                ├── BuildWindow    (ModuleScript)
                 ├── EggsWindow     (ModuleScript)
                 ├── IndexWindow    (ModuleScript)
                 ├── PetsWindow     (ModuleScript)
                 ├── ShopWindows    (ModuleScript)
                 ├── TeleportWindow (ModuleScript)
+                ├── TradeWindow    (ModuleScript)
                 ├── TrainingWindow (ModuleScript)
                 └── UpgradesWindow (ModuleScript)
 ```
@@ -95,9 +108,10 @@ These are all created by code at runtime, so the scripts never depend on objects
 
 | Object | Created by | Where |
 |---|---|---|
-| `Remotes` folder + 12 RemoteEvents + 2 RemoteFunctions | `Net.Setup()` in server `Main` | `ReplicatedStorage.Remotes` |
+| `Remotes` folder + 15 RemoteEvents + 2 RemoteFunctions | `Net.Setup()` in server `Main` | `ReplicatedStorage.Remotes` |
 | The whole map (`FNS_World`), lighting, atmosphere | `WorldBuilder` | `Workspace`, `Lighting` |
 | `leaderstats` | `ProgressionService` | each Player |
+| Ninja Village plots + placed buildings (`FNS_Plots`) | `BuildingService` | `Workspace` |
 | All ScreenGuis (`FNS_UI`, `FNS_FX`, `FNS_SliceHUD`, `FNS_Blade`, `FNS_Training`, `FNS_Hatch`) | client modules | `PlayerGui` |
 | Katana / belt / trail on the character | `EquipmentService` | character |
 | Pets, arena fruit | `PetController`, `FruitVisuals` (client only) | `Workspace.FNS_Pets`, `Workspace.FNS_LocalFruits` |
@@ -115,6 +129,8 @@ These are all created by code at runtime, so the scripts never depend on objects
 - [ ] Slice an egg → 🥚 Eggs shows a countdown → after 20 s **HATCH!** → reveal animation → creature follows you.
 - [ ] 🐾 Creatures: Equip / Unequip / Equip Best / Release. 📖 Index marks discoveries.
 - [ ] ✨ Trails: buy Neon (needs level 3). A trail appears and speed rises.
+- [ ] 🏯 Village: buy a Stone Lantern (250) → 🔨 Place → the ghost turns green/red → click (PC) or tap + ✅ Place (phone). R rotates. 🧹 Pick up returns it to the inventory. Bonuses appear in the Village window.
+- [ ] 🤝 Trade (Test → Start with 2 players): request → Accept → add a creature + coins → both Ready → both Confirm after 3 s → items swap. Any change resets Ready.
 - [ ] Grove gate is solid below level 10 and opens at level 10. Teleport to locked arenas is refused.
 - [ ] Saving (published place with API access): stop, play again, and everything is restored, including the remaining egg timers.
 

@@ -15,6 +15,7 @@ local Rarities = require(Shared.Config.Rarities)
 local Creatures = require(Shared.Config.Creatures)
 local Locations = require(Shared.Config.Locations)
 local ModelBuilder = require(Shared.Util.ModelBuilder)
+local JapaneseBuilder = require(Shared.Util.JapaneseBuilder)
 
 local WorldBuilder = {}
 
@@ -147,6 +148,27 @@ local function sign(parent: Instance, position: Vector3, facing: Vector3, text: 
 	surfaceText(board, text, c(255, 255, 255), { Enum.NormalId.Front, Enum.NormalId.Back })
 end
 
+-- Places a JapaneseBuilder model (origin = footprint centre on the floor) and parents it.
+local function place(parent: Instance, model: Model, cf: CFrame): Model
+	model:PivotTo(cf)
+	model.Parent = parent
+	return model
+end
+
+local function torii(parent: Instance, position: Vector3, yaw: number, width: number?, height: number?)
+	return place(parent, JapaneseBuilder.Torii(width or 14, height or 13), CFrame.new(position) * CFrame.Angles(0, math.rad(yaw), 0))
+end
+
+local function lantern(parent: Instance, position: Vector3, scale: number?)
+	return place(parent, JapaneseBuilder.StoneLantern(scale or 1), CFrame.new(position))
+end
+
+local sakuraSeed = 0
+local function sakura(parent: Instance, position: Vector3, scale: number?)
+	sakuraSeed += 1
+	return place(parent, JapaneseBuilder.Sakura(scale or 1.2, sakuraSeed), CFrame.new(position) * CFrame.Angles(0, sakuraSeed * 1.3, 0))
+end
+
 local function tree(parent: Instance, position: Vector3, leafColor: Color3, fruitColor: Color3?, scale: number)
 	part(parent, { Name = "Trunk", Shape = "Cylinder", Size = Vector3.new(8 * scale, 1.6 * scale, 1.6 * scale),
 		CFrame = CFrame.new(position + Vector3.new(0, 4 * scale, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = c(120, 80, 45), Material = Enum.Material.Wood })
@@ -198,13 +220,32 @@ local function buildSpawn(world: Instance)
 	sign(folder, Vector3.new(-30, 0, 0), Vector3.new(1, 0, 0), "⬅ SHOPS 🛒", c(60, 150, 255))
 	sign(folder, Vector3.new(0, 0, 32), Vector3.new(0, 0, -1), "🥚 HATCHERY ⬇", c(220, 100, 200))
 
-	-- Roads
-	local road = c(240, 215, 160)
-	part(folder, { Name = "RoadNorth", Size = Vector3.new(16, 0.2, 110), Position = Vector3.new(0, 0.1, -90), Color = road, Material = Enum.Material.Sand })
-	part(folder, { Name = "RoadCross", Size = Vector3.new(360, 0.2, 16), Position = Vector3.new(0, 0.1, -142), Color = road, Material = Enum.Material.Sand })
-	part(folder, { Name = "RoadEast", Size = Vector3.new(120, 0.2, 16), Position = Vector3.new(95, 0.1, 0), Color = road, Material = Enum.Material.Sand })
-	part(folder, { Name = "RoadWest", Size = Vector3.new(120, 0.2, 16), Position = Vector3.new(-95, 0.1, 0), Color = road, Material = Enum.Material.Sand })
-	part(folder, { Name = "RoadSouth", Size = Vector3.new(16, 0.2, 100), Position = Vector3.new(0, 0.1, 85), Color = road, Material = Enum.Material.Sand })
+	-- Japanese plaza: torii at every exit, stone lanterns, pagoda, bell tower, koi pond, zen garden
+	torii(folder, Vector3.new(0, 0.6, -36), 0)
+	torii(folder, Vector3.new(0, 0.6, 36), 0)
+	torii(folder, Vector3.new(36, 0.6, 0), 90)
+	torii(folder, Vector3.new(-36, 0.6, 0), 90)
+	for i = 0, 7 do
+		local a = math.rad(i * 45 + 22.5)
+		lantern(folder, Vector3.new(math.cos(a) * 31, 0.6, math.sin(a) * 31), 1.1)
+	end
+	place(folder, JapaneseBuilder.Pagoda(18, 5), CFrame.new(-50, 0, -50) * CFrame.Angles(0, math.rad(45), 0))
+	place(folder, JapaneseBuilder.BellTower(12), CFrame.new(50, 0, -50) * CFrame.Angles(0, math.rad(-45), 0))
+	place(folder, JapaneseBuilder.KoiPond(18), CFrame.new(50, 0, 50))
+	place(folder, JapaneseBuilder.Bridge(6, 20), CFrame.new(50, 0, 50))
+	place(folder, JapaneseBuilder.ZenGarden(18), CFrame.new(-50, 0, 50))
+	for _, pos in { Vector3.new(-30, 0, -50), Vector3.new(-50, 0, -28), Vector3.new(30, 0, -52), Vector3.new(52, 0, -28),
+		Vector3.new(30, 0, 52), Vector3.new(-30, 0, 52), Vector3.new(-52, 0, 28), Vector3.new(52, 0, 26) } do
+		sakura(folder, pos, 1.3)
+	end
+
+	-- Stone roads
+	local road = c(175, 170, 160)
+	part(folder, { Name = "RoadNorth", Size = Vector3.new(16, 0.2, 110), Position = Vector3.new(0, 0.1, -90), Color = road, Material = Enum.Material.Cobblestone })
+	part(folder, { Name = "RoadCross", Size = Vector3.new(360, 0.2, 16), Position = Vector3.new(0, 0.1, -142), Color = road, Material = Enum.Material.Cobblestone })
+	part(folder, { Name = "RoadEast", Size = Vector3.new(120, 0.2, 16), Position = Vector3.new(95, 0.1, 0), Color = road, Material = Enum.Material.Cobblestone })
+	part(folder, { Name = "RoadWest", Size = Vector3.new(120, 0.2, 16), Position = Vector3.new(-95, 0.1, 0), Color = road, Material = Enum.Material.Cobblestone })
+	part(folder, { Name = "RoadSouth", Size = Vector3.new(16, 0.2, 100), Position = Vector3.new(0, 0.1, 85), Color = road, Material = Enum.Material.Cobblestone })
 end
 
 local function buildArena(world: Instance, arena: Arenas.ArenaDef)
@@ -249,6 +290,18 @@ local function buildArena(world: Instance, arena: Arenas.ArenaDef)
 	local title = part(folder, { Name = "BackdropTitle", Size = Vector3.new(60, 7, 0.5), Position = o + Vector3.new(0, 29, -25.8), Color = arena.BackdropColor, Transparency = 1, CanCollide = false })
 	surfaceText(title, "🍉 " .. arena.DisplayName .. " 🍍", c(255, 255, 255), { Enum.NormalId.Back })
 
+	-- Japanese entrance: big torii + lanterns
+	torii(folder, o + Vector3.new(0, 0, 50), 0, 26, 20)
+	for _, sx in { -1, 1 } do
+		lantern(folder, o + Vector3.new(sx * 20, 0, 47), 1.4)
+	end
+	if arena.Order == 1 then
+		-- Mount Fuji and a red sun painted on the backdrop
+		local sun = part(folder, { Name = "Sun", Shape = "Cylinder", Size = Vector3.new(0.4, 16, 16), CFrame = CFrame.new(o + Vector3.new(22, 25, -25.8)) * CFrame.Angles(0, math.rad(90), 0), Color = c(235, 60, 50), Material = Enum.Material.Neon, CanCollide = false })
+		sun.Transparency = 0.1
+		place(folder, JapaneseBuilder.Mountain(70, 24, 2), CFrame.new(o + Vector3.new(-6, 4, -25)))
+	end
+
 	-- Level gate (client makes it passable once the player's level is high enough)
 	if arena.RequiredLevel > 1 then
 		local gate = part(folder, { Name = "FNS_Gate", Size = Vector3.new(30, 17, 1), Position = o + Vector3.new(0, 8.5, 41), Color = c(255, 80, 80), Material = Enum.Material.ForceField })
@@ -277,7 +330,11 @@ local function buildArena(world: Instance, arena: Arenas.ArenaDef)
 		local side = i % 2 == 0 and -1 or 1
 		local z = -20 + (i // 2) * 25
 		local position = o + Vector3.new(side * 64, 0, z)
-		if isCosmic then
+		if arena.Order == 1 then
+			sakura(folder, position, 1.5)
+		elseif arena.Order == 2 then
+			place(folder, JapaneseBuilder.Bamboo(10, i), CFrame.new(position))
+		elseif isCosmic then
 			part(folder, { Name = "Crystal", Size = Vector3.new(3, 14, 3), CFrame = CFrame.new(position + Vector3.new(0, 7, 0)) * CFrame.Angles(0, math.rad(45), math.rad(10)), Color = arena.AccentColor, Material = Enum.Material.Neon })
 		else
 			tree(folder, position, arena.Order == 2 and c(40, 170, 80) or c(70, 180, 60), fruitColors[i % #fruitColors + 1], 1.2)
@@ -312,6 +369,18 @@ local function buildDojo(world: Instance)
 		billboard(dummy, def.Emoji .. " " .. def.DisplayName, def.RequiredTrainingLevel > 1 and ("Training Lv. " .. def.RequiredTrainingLevel) or "Press E / tap to train", def.Color, 6.5)
 	end
 
+	-- Japanese touches: entrance torii, tiled roof over the training floor, lanterns
+	torii(folder, o + Vector3.new(-56, 0, 0), 90, 16, 15)
+	local roof = Instance.new("Model")
+	roof.Name = "DojoRoof"
+	JapaneseBuilder.Roof(roof, CFrame.new(o + Vector3.new(0, 24.5, -10)), 112, 88, 12, c(55, 58, 70), true)
+	roof.Parent = folder
+	for _, x in { -40, 40 } do
+		for _, z in { -46, 24 } do
+			lantern(folder, o + Vector3.new(x, 1, z), 1)
+		end
+	end
+
 	-- Belt shop inside the dojo
 	local counter = part(folder, { Name = "BeltCounter", Size = Vector3.new(14, 3.5, 4), Position = o + Vector3.new(0, 2.75, 12), Color = c(120, 70, 40), Material = Enum.Material.Wood })
 	prompt(counter, "Open", "Belt Shop", { Action = "Open", Window = "Belts" })
@@ -334,17 +403,24 @@ local function buildShops(world: Instance)
 		local base = o + offset
 		local counter = part(folder, { Name = window .. "Counter", Size = Vector3.new(16, 3.5, 4), Position = base + Vector3.new(0, 2.75, 0), Color = color })
 		part(folder, { Name = "StallBack", Size = Vector3.new(18, 12, 1), Position = base + Vector3.new(0, 7, -6), Color = color:Lerp(c(255, 255, 255), 0.5) })
-		part(folder, { Name = "StallRoof", Size = Vector3.new(20, 1, 10), Position = base + Vector3.new(0, 13, -2), Color = color })
+		local roof = Instance.new("Model")
+		roof.Name = "StallRoof"
+		JapaneseBuilder.Roof(roof, CFrame.new(base + Vector3.new(0, 13, -2)), 24, 14, 4, c(60, 60, 70), true)
+		roof.Parent = folder
+		for _, x in { -11, 11 } do
+			place(folder, JapaneseBuilder.PaperLantern(), CFrame.new(base + Vector3.new(x, 0, 4)) * CFrame.Angles(0, x > 0 and math.pi or 0, 0))
+		end
 		for _, x in { -9, 9 } do
 			part(folder, { Name = "StallPole", Size = Vector3.new(1, 12, 1), Position = base + Vector3.new(x, 7, 2.5), Color = c(250, 250, 250) })
 		end
-		local signBoard = part(folder, { Name = "StallSign", Size = Vector3.new(16, 3, 0.4), Position = base + Vector3.new(0, 15.5, 2.8), Color = c(30, 30, 40) })
+		local signBoard = part(folder, { Name = "StallSign", Size = Vector3.new(16, 3, 0.4), Position = base + Vector3.new(0, 11.4, 3.2), Color = c(30, 30, 40) })
 		surfaceText(signBoard, title, c(255, 255, 255), { Enum.NormalId.Back, Enum.NormalId.Front })
 		prompt(counter, "Open", title, { Action = "Open", Window = window })
 		billboard(counter, title, subtitle, color, 5)
 		return base
 	end
 
+	torii(folder, o + Vector3.new(48, 0, 0), 90)
 	local katanaBase = stall(Vector3.new(-20, 0, -25), "⚔️ KATANA SHOP", "Stronger blades = more coins", "Katanas", c(255, 140, 50))
 	local displayKatanas = { "Iron", "Golden", "Diamond", "Fire" }
 	for i, id in displayKatanas do
@@ -364,6 +440,14 @@ local function buildHatchery(world: Instance)
 	local o = Vector3.new(0, 0, 170)
 	disc(folder, o + Vector3.new(0, 0.3, 0), 90, 0.6, c(255, 220, 240), Enum.Material.SmoothPlastic)
 	disc(folder, o + Vector3.new(0, 0.5, 0), 70, 0.6, c(255, 240, 250), Enum.Material.SmoothPlastic)
+
+	torii(folder, o + Vector3.new(0, 0, -36), 0, 16, 14)
+	for i = 0, 9 do
+		local a = math.rad(i * 36 + 18)
+		if math.abs(math.cos(a)) < 0.95 or math.sin(a) > 0 then
+			sakura(folder, o + Vector3.new(math.cos(a) * 52, 0, math.sin(a) * 52 + 4), 1.3)
+		end
+	end
 
 	-- Incubator
 	local incubator = disc(folder, o + Vector3.new(-16, 2, 10), 12, 3, c(255, 150, 200), Enum.Material.SmoothPlastic)
@@ -398,10 +482,32 @@ local function buildHatchery(world: Instance)
 		local pedestal = disc(folder, position + Vector3.new(0, 1.5, 0), 6, 3, rarity.Color, Enum.Material.SmoothPlastic)
 		local model = ModelBuilder.Creature(creatureDef.Id)
 		ModelBuilder.AnchorAll(model)
-		model:PivotTo(CFrame.lookAt(position + Vector3.new(0, 4.5, 0), o + Vector3.new(0, 4.5, -60)))
 		model:ScaleTo(1.6)
+		model:PivotTo(CFrame.lookAt(position + Vector3.new(0, 4.5, 0), o + Vector3.new(0, 4.5, -60)))
+		local box, boxSize = model:GetBoundingBox()
+		model:PivotTo(model:GetPivot() + Vector3.new(0, 3 - (box.Position.Y - boxSize.Y / 2), 0))
 		model.Parent = folder
 		billboard(pedestal, rarity.Name, creatureDef.DisplayName, rarity.Color, 7)
+	end
+end
+
+local function buildVillage(world: Instance)
+	local folder = Instance.new("Folder")
+	folder.Name = "Village"
+	folder.Parent = world
+	part(folder, { Name = "VillageRoad", Size = Vector3.new(305, 0.2, 14), Position = Vector3.new(-155, 0.1, 122), Color = c(175, 170, 160), Material = Enum.Material.Cobblestone })
+	part(folder, { Name = "VillageLane", Size = Vector3.new(220, 0.2, 10), Position = Vector3.new(-194, 0.1, 200), Color = c(175, 170, 160), Material = Enum.Material.Cobblestone })
+	part(folder, { Name = "VillageLinkA", Size = Vector3.new(10, 0.2, 80), Position = Vector3.new(-79, 0.1, 160), Color = c(175, 170, 160), Material = Enum.Material.Cobblestone })
+	local gate = torii(folder, Vector3.new(-30, 0, 122), 90, 18, 16)
+	local gatePost = gate.PrimaryPart :: BasePart
+	billboard(gatePost, "🏯 NINJA VILLAGE", "Build your own Japanese base!", c(255, 120, 90), 19)
+	for x = -50, -300, -28 do
+		lantern(folder, Vector3.new(x, 0, 113), 1)
+		lantern(folder, Vector3.new(x - 14, 0, 131), 1)
+	end
+	for _, x in { -138, -194, -250 } do
+		sakura(folder, Vector3.new(x, 0, 165), 0.9)
+		sakura(folder, Vector3.new(x, 0, 235), 0.9)
 	end
 end
 
@@ -414,15 +520,24 @@ local function buildScenery(world: Instance)
 	for _ = 1, 46 do
 		local x = rng:NextNumber(-300, 300)
 		local z = rng:NextNumber(-280, 300)
-		local clear = (math.abs(x) < 60 and math.abs(z) < 60) -- spawn plaza
+		local clear = (math.abs(x) < 72 and math.abs(z) < 72) -- spawn plaza + pagoda / pond / garden
 			or (z < -120 and z > -260 and math.abs(x) < 240) -- arenas
 			or (math.abs(x - 190) < 60 and math.abs(z) < 60) -- dojo
 			or (math.abs(x + 190) < 55 and math.abs(z) < 55) -- shops
 			or (math.abs(x) < 55 and math.abs(z - 170) < 55) -- hatchery
 			or (math.abs(x) < 12 or math.abs(z) < 12) -- roads
 			or (math.abs(z + 142) < 12)
+			or (x < -70 and x > -315 and z > 105 and z < 268) -- ninja village
+			or (math.abs(z - 122) < 12 and x < 10) -- village road
 		if not clear then
-			tree(folder, Vector3.new(x, 0, z), c(60 + rng:NextInteger(0, 40), 170, 60), fruitColors[rng:NextInteger(1, 4)], rng:NextNumber(0.9, 1.5))
+			local kind = rng:NextInteger(1, 3)
+			if kind == 1 then
+				sakura(folder, Vector3.new(x, 0, z), rng:NextNumber(1.1, 1.6))
+			elseif kind == 2 then
+				place(folder, JapaneseBuilder.Bamboo(9, rng:NextInteger(1, 999)), CFrame.new(x, 0, z))
+			else
+				tree(folder, Vector3.new(x, 0, z), c(60 + rng:NextInteger(0, 40), 170, 60), fruitColors[rng:NextInteger(1, 4)], rng:NextNumber(0.9, 1.5))
+			end
 		end
 	end
 	-- Map border (invisible walls so nobody falls off)
@@ -489,6 +604,7 @@ function WorldBuilder.Init()
 	buildDojo(world)
 	buildShops(world)
 	buildHatchery(world)
+	buildVillage(world)
 	buildScenery(world)
 	world.Parent = workspace
 

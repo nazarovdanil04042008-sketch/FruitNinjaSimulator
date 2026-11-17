@@ -10,7 +10,7 @@ local ModelBuilder = require(game:GetService("ReplicatedStorage").Shared.Util.Mo
 
 local PetController = {}
 
-type Entry = { Models: { Model }, Signature: string, Connection: RBXScriptConnection? }
+type Entry = { Models: { Model }, Feet: { number }, Signature: string, Connection: RBXScriptConnection? }
 
 local entries: { [Player]: Entry } = {}
 local folder: Folder
@@ -35,17 +35,22 @@ local function rebuild(player: Player)
 	end
 	entry.Signature = signature
 	clearModels(entry)
+	table.clear(entry.Feet)
 	for id in string.gmatch(signature, "[^,]+") do
 		local model = ModelBuilder.Creature(id)
 		ModelBuilder.AnchorRoot(model)
 		model:ScaleTo(0.8)
+		-- distance from the root down to the soles, so pets walk on the ground
+		local box, size = model:GetBoundingBox()
+		local root = model.PrimaryPart :: BasePart
+		table.insert(entry.Feet, root.Position.Y - (box.Position.Y - size.Y / 2))
 		model.Parent = folder
 		table.insert(entry.Models, model)
 	end
 end
 
 local function track(player: Player)
-	local entry: Entry = { Models = {}, Signature = "" }
+	local entry: Entry = { Models = {}, Feet = {}, Signature = "" }
 	entries[player] = entry
 	entry.Connection = player:GetAttributeChangedSignal("EquippedCreatures"):Connect(function()
 		rebuild(player)
@@ -95,14 +100,26 @@ local function update(dt: number)
 		if (hrp.Position - camera.CFrame.Position).Magnitude > MAX_DISTANCE then
 			continue
 		end
+		local humanoid = character:FindFirstChildOfClass("Humanoid")
+		local groundY = hrp.Position.Y - 3
+		if humanoid and humanoid.RigType == Enum.HumanoidRigType.R15 then
+			groundY = hrp.Position.Y - humanoid.HipHeight - hrp.Size.Y / 2
+		end
+		local velocity = hrp.AssemblyLinearVelocity
+		local moving = Vector2.new(velocity.X, velocity.Z).Magnitude > 2
 		local count = #entry.Models
 		for i, model in entry.Models do
 			local root = model.PrimaryPart
 			if root then
-				local spread = (i - (count + 1) / 2) * 3.4
+				local spread = (i - (count + 1) / 2) * 3.6
 				local row = 5 + math.abs(spread) * 0.25
-				local bob = math.sin(t * 3 + i * 1.7) * 0.35
-				local target = hrp.CFrame * CFrame.new(spread, -0.6 + bob, row)
+				-- walking: little hops + side-to-side waddle; idle: gentle breathing bob
+				local phase = t * 11 + i * 1.9
+				local hop = moving and math.abs(math.sin(phase)) * 0.9 or (math.sin(t * 2.5 + i) + 1) * 0.08
+				local waddle = moving and math.sin(phase) * 0.18 or math.sin(t * 1.5 + i) * 0.04
+				local flat = hrp.CFrame * CFrame.new(spread, 0, row)
+				local target = CFrame.new(flat.Position.X, groundY + (entry.Feet[i] or 1) + hop, flat.Position.Z)
+					* hrp.CFrame.Rotation * CFrame.Angles(0, 0, waddle)
 				local current = root.CFrame
 				if (current.Position - target.Position).Magnitude > 40 then
 					current = target -- teleported: snap
