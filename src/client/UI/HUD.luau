@@ -29,6 +29,7 @@ local setXp: (number, string?) -> ()
 local coinsLabel: TextLabel
 local infoLabels: { [string]: TextLabel } = {}
 local eggBadge: TextLabel
+local badges: { [string]: TextLabel } = {}
 local displayedCoins = 0
 local coinTarget = 0
 local coinValue: NumberValue
@@ -45,6 +46,7 @@ local MENU = {
 	{ Window = "Teleport", Emoji = "🗺️", Label = "Teleport", Color = Color3.fromRGB(60, 200, 170) },
 	{ Window = "Build", Emoji = "🏯", Label = "Village", Color = Color3.fromRGB(220, 70, 60) },
 	{ Window = "Trade", Emoji = "🤝", Label = "Trade", Color = Color3.fromRGB(90, 200, 120) },
+	{ Window = "Rewards", Emoji = "🎁", Label = "Rewards", Color = Color3.fromRGB(255, 110, 190) },
 }
 
 local function buildVersionLabel(root: ScreenGui)
@@ -98,6 +100,12 @@ local function build(root: ScreenGui)
 			end })
 		UIKit.Label({ Text = entry.Emoji, Size = UDim2.new(1, 0, 0, 36), Position = UDim2.fromOffset(0, 6), Parent = button, ZIndex = 3, Stroke = false })
 		UIKit.Label({ Text = entry.Label, Size = UDim2.new(1, -6, 0, 18), Position = UDim2.new(0, 3, 1, -24), Parent = button, ZIndex = 3, MaxTextSize = 16 })
+		local badge = UIKit.Label({ Text = "!", Size = UDim2.fromOffset(26, 26), Position = UDim2.new(1, -18, 0, -8), Parent = button, ZIndex = 5 })
+		badge.BackgroundTransparency = 0
+		badge.BackgroundColor3 = C.Red
+		UIKit.Corner(13).Parent = badge
+		badge.Visible = false
+		badges[entry.Window] = badge
 		if entry.Window == "Eggs" then
 			eggBadge = UIKit.Label({ Text = "!", Size = UDim2.fromOffset(26, 26), Position = UDim2.new(1, -18, 0, -8), Parent = button, ZIndex = 5 })
 			eggBadge.BackgroundTransparency = 0
@@ -141,6 +149,15 @@ local function updateEggBadge()
 	end
 	eggBadge.Visible = ready > 0
 	eggBadge.Text = tostring(ready)
+end
+
+-- Shows a red counter on a menu button (0 hides it).
+function HUD.SetBadge(windowName: string, count: number)
+	local badge = badges[windowName]
+	if badge then
+		badge.Visible = count > 0
+		badge.Text = tostring(count)
+	end
 end
 
 function HUD.SetSlicingMode(active: boolean)

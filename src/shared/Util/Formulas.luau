@@ -30,7 +30,7 @@ export type Derived = {
 
 -- XP needed to go from `level` to `level + 1`.
 function Formulas.XpForLevel(level: number): number
-	return math.floor(40 * level ^ 1.45 + 20)
+	return math.floor(45 * level ^ 1.5 + 25)
 end
 
 function Formulas.TrainingXpForLevel(level: number): number
@@ -109,9 +109,15 @@ function Formulas.Compute(profile: any): Derived
 	local spawnInterval = GameConfig.BaseSpawnInterval / (1 + speed * 0.012) / math.sqrt(speedMultiplier)
 	spawnInterval = math.max(spawnInterval, GameConfig.MinSpawnInterval)
 
+	-- personal 2x boosts from daily / playtime rewards (unix expiry times)
+	local boosts = profile.Boosts or {}
+	local now = os.time()
+	local coinBoost = (boosts.Coins or 0) > now and 2 or 1
+	local xpBoost = (boosts.Xp or 0) > now and 2 or 1
+
 	return {
-		CoinMultiplier = (1 + strength * 0.04) * katana.CoinMultiplier * (1 + creature.Coins + building.Coins),
-		XpMultiplier = (1 + (trainingLevel - 1) * 0.05) * (1 + creature.Xp + building.Xp),
+		CoinMultiplier = coinBoost * (1 + strength * 0.04) * katana.CoinMultiplier * (1 + creature.Coins + building.Coins),
+		XpMultiplier = xpBoost * (1 + (trainingLevel - 1) * 0.05) * (1 + creature.Xp + building.Xp),
 		TrainingMultiplier = belt.TrainingMultiplier * (1 + creature.Training + building.Training) * (1 + (trainingLevel - 1) * 0.02),
 		SpeedMultiplier = speedMultiplier,
 		WalkSpeed = walkSpeed,

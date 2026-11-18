@@ -34,6 +34,7 @@ ReplicatedStorage
     │   ├── Fruits                 (ModuleScript)
     │   ├── GameConfig             (ModuleScript)
     │   ├── Katanas                (ModuleScript)
+    │   ├── LiveOps                (ModuleScript)
     │   ├── Locations              (ModuleScript)
     │   ├── Rarities               (ModuleScript)
     │   ├── Sounds                 (ModuleScript)
@@ -52,6 +53,7 @@ ReplicatedStorage
 └── Assets                         (Folder, optional: your own 3D models - see docs/ASSETS.md)
     ├── Creatures                  (Folder)
     ├── Buildings                  (Folder)
+    ├── Decor                      (Folder)
     └── Katanas                    (Folder)
 
 ServerScriptService
@@ -59,11 +61,15 @@ ServerScriptService
     ├── Main                       (Script)        <- src/server/Main.server.luau
     ├── Services                   (Folder)
     │   ├── ActionService          (ModuleScript)
+    │   ├── BossService            (ModuleScript)
     │   ├── BuildingService        (ModuleScript)
     │   ├── DataService            (ModuleScript)
     │   ├── EggService             (ModuleScript)
     │   ├── EquipmentService       (ModuleScript)
+    │   ├── EventService           (ModuleScript)
     │   ├── ProgressionService     (ModuleScript)
+    │   ├── QuestBus               (ModuleScript)
+    │   ├── RewardService          (ModuleScript)
     │   ├── ShopService            (ModuleScript)
     │   ├── SlicingService         (ModuleScript)
     │   ├── TradeService           (ModuleScript)
@@ -77,8 +83,11 @@ StarterPlayer
     └── Client                     (Folder)
         ├── Main                   (LocalScript)   <- src/client/Main.client.luau
         ├── Controllers            (Folder)
+        │   ├── AmbienceController (ModuleScript)
+        │   ├── BossController     (ModuleScript)
         │   ├── BuildController    (ModuleScript)
         │   ├── FruitVisuals       (ModuleScript)
+        │   ├── GrassController    (ModuleScript)
         │   ├── HatchReveal        (ModuleScript)
         │   ├── PetController      (ModuleScript)
         │   ├── SlicingController  (ModuleScript)
@@ -96,6 +105,7 @@ StarterPlayer
                 ├── EggsWindow     (ModuleScript)
                 ├── IndexWindow    (ModuleScript)
                 ├── PetsWindow     (ModuleScript)
+                ├── RewardsWindow  (ModuleScript)
                 ├── ShopWindows    (ModuleScript)
                 ├── TeleportWindow (ModuleScript)
                 ├── TradeWindow    (ModuleScript)
@@ -108,7 +118,7 @@ These are all created by code at runtime, so the scripts never depend on objects
 
 | Object | Created by | Where |
 |---|---|---|
-| `Remotes` folder + 15 RemoteEvents + 2 RemoteFunctions | `Net.Setup()` in server `Main` | `ReplicatedStorage.Remotes` |
+| `Remotes` folder + 17 RemoteEvents + 2 RemoteFunctions | `Net.Setup()` in server `Main` | `ReplicatedStorage.Remotes` |
 | The whole map (`FNS_World`), lighting, atmosphere | `WorldBuilder` | `Workspace`, `Lighting` |
 | `leaderstats` | `ProgressionService` | each Player |
 | Ninja Village plots + placed buildings (`FNS_Plots`) | `BuildingService` | `Workspace` |
@@ -138,6 +148,9 @@ Some settings can only be changed in Studio, not by scripts:
 - [ ] ✨ Trails: buy Neon (needs level 3). A trail appears and speed rises.
 - [ ] 🏯 Village: buy a Stone Lantern (250) → 🔨 Place → the ghost turns green/red → click (PC) or tap + ✅ Place (phone). R rotates. 🧹 Pick up returns it to the inventory. Bonuses appear in the Village window.
 - [ ] 🤝 Trade (Test → Start with 2 players): request → Accept → add a creature + coins → both Ready → both Confirm after 3 s → items swap. Any change resets Ready.
+- [ ] 👹 Boss: in Studio the first boss appears ~45 s after Play (then every 5 min; live servers: every 30 min at :00/:30). Teleport → Boss Arena, press ⚔️ ATTACK / click / F, dodge the red circle, get rank + rewards.
+- [ ] 🎉 Event: ~20 s after Play an event starts in Studio (panel on the right shows it with a timer).
+- [ ] 🎁 Rewards: claim Day 1, playtime rewards after 5 min, quests progress while slicing / hatching / training.
 - [ ] Grove gate is solid below level 10 and opens at level 10. Teleport to locked arenas is refused.
 - [ ] Saving (published place with API access): stop, play again, and everything is restored, including the remaining egg timers.
 

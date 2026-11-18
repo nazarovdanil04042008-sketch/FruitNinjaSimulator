@@ -23,12 +23,13 @@ local WorldController = require(Controllers.WorldController)
 local BuildController = require(Controllers.BuildController)
 local AmbienceController = require(Controllers.AmbienceController)
 local GrassController = require(Controllers.GrassController)
+local BossController = require(Controllers.BossController)
 
 FruitVisuals.Init()
 HUD.Init()
 
 -- Windows
-for _, name in { "UpgradesWindow", "ShopWindows", "PetsWindow", "EggsWindow", "IndexWindow", "TrainingWindow", "TeleportWindow", "BuildWindow", "TradeWindow" } do
+for _, name in { "UpgradesWindow", "ShopWindows", "PetsWindow", "EggsWindow", "IndexWindow", "TrainingWindow", "TeleportWindow", "BuildWindow", "TradeWindow", "RewardsWindow" } do
 	local ok, err = pcall(function()
 		require(UI.Windows:WaitForChild(name)).Init()
 	end)
@@ -45,6 +46,7 @@ WorldController.Init()
 BuildController.Init()
 AmbienceController.Init()
 GrassController.Init()
+BossController.Init()
 
 -- Cross-controller rules
 SlicingController.IsBlocked = function()

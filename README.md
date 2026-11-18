@@ -15,6 +15,10 @@ A complete, playable Roblox simulator set in a Japanese ninja world: **Fruit-Nin
 | ✨ Trails | 10 trails with colours, particles and speed multipliers |
 | 🏯 Ninja Village | Japanese-style world (torii, pagoda, sakura, lanterns, bell tower, koi pond, zen garden, Mount Fuji). Every player gets a plot and builds 14 Japanese buildings on a grid (ghost preview, rotate, pick up) for passive bonuses |
 | 🤝 Trading | Player-to-player trades of creatures and coins: request → offer → Ready → Confirm with a safety countdown; validated and saved by the server |
+| 👹 World bosses | A giant brainrot appears in the Boss Arena every 30 min (same time on all servers). Everyone fights it together: ATTACK button / click / F, dodge ground slams, rewards by damage rank (top = Cosmic Egg) |
+| 🎉 Events | Two 5-minute events every half hour: Double Coins, Golden Rain, Egg Frenzy, Lucky Hatch, Fruit Storm, Double XP |
+| 🎁 Rewards | 7-day daily login streak, playtime rewards (5–60 min), 3 daily quests, personal 2x Coins / 2x XP boosts |
+| 🌸 Living world | Terrain grass, interactive grass blades, lake with koi, day/night cycle, cranes, falling petals, fireflies, lanterns |
 | 🎨 Custom models | Drop your own 3D models into `assets/` and they replace the procedural creatures, buildings or katanas (see `docs/ASSETS.md`) |
 | 🖥️ UI | HUD (level, XP, coins, speed, katana, belt, trail), 9 menus, purchase confirmations, toasts, stat popups, level-up banners. Scales for phones, tablets and PC |
 | 💾 Saving | DataStore with session locking, `UpdateAsync`, retries, autosave, save on leave / shutdown, Studio offline fallback |
@@ -55,7 +59,7 @@ src/
     Controllers/              State, SlicingController, FruitVisuals, TrainingGames, HatchReveal,
                               PetController, WorldController
     UI/                       Theme, UIKit, Effects, Viewport, HUD, Windows/*
-assets/     -> ReplicatedStorage.Assets   (optional custom models: Creatures/, Buildings/, Katanas/)
+assets/     -> ReplicatedStorage.Assets   (optional custom models: Creatures/, Buildings/, Katanas/, Decor/)
 docs/
   ASSETS.md                   how to use your own 3D models (Russian)
   ARCHITECTURE.md             how the systems fit together, remotes, security model, data schema

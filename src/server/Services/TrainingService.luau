@@ -17,6 +17,7 @@ local DataService = require(script.Parent.DataService)
 local ActionService = require(script.Parent.ActionService)
 local ProgressionService = require(script.Parent.ProgressionService)
 local SlicingService = require(script.Parent.SlicingService)
+local QuestBus = require(script.Parent.QuestBus)
 
 local TrainingService = {}
 
@@ -98,6 +99,7 @@ function TrainingService.Init()
 			ProgressionService.AddXp(player, math.ceil(def.PlayerXp * quality * derived.XpMultiplier))
 			ProgressionService.AddCoins(player, math.ceil(def.Coins * quality * (1 + derived.CreatureBonus.Coins)))
 			profile.Totals.TrainingsDone += 1
+			QuestBus.Fire(player, "Train", 1)
 			DataService.Replicate(player)
 		end
 		local grade = if score >= def.Goal * 1.5 then "PERFECT!" elseif score >= def.Goal then "Great!" elseif score >= def.Goal * 0.5 then "Good" else "Keep practicing!"

@@ -16,11 +16,14 @@ local order = {
 	"ProgressionService",
 	"EquipmentService",
 	"ShopService",
+	"EventService",
 	"EggService",
 	"SlicingService",
 	"TrainingService",
 	"BuildingService",
 	"TradeService",
+	"BossService",
+	"RewardService",
 }
 
 local loaded = {}

@@ -5,7 +5,7 @@
 local GameConfig = {}
 
 -- Shown on screen (bottom-left) and in the Output window, so you can always see which build you're running.
-GameConfig.Version = "2.2 - Living World"
+GameConfig.Version = "3.0 - Bosses & Rewards"
 
 GameConfig.DataStoreName = "FruitNinjaSimulator_PlayerData_v1"
 GameConfig.DataVersion = 1
@@ -55,7 +55,7 @@ GameConfig.TrainingXpBase = 25
 GameConfig.TrainingXpExponent = 1.35
 
 -- Egg hatching
-GameConfig.SkipHatchCostPerSecond = 2 -- coins per remaining second to hatch instantly
+GameConfig.SkipHatchCostPerSecond = 4 -- coins per remaining second to hatch instantly
 GameConfig.ReleaseCreatureRefund = { -- coins refunded when releasing a creature, by rarity index
 	5, 10, 25, 60, 150, 400, 900, 2000, 5000, 12000,
 }

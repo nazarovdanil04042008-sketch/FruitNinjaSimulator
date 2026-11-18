@@ -29,6 +29,7 @@ local Eggs = require(Shared.Config.Eggs)
 local Formulas = require(Shared.Util.Formulas)
 local Buildings = require(Shared.Config.Buildings)
 local PlotGrid = require(Shared.Util.PlotGrid)
+local LiveOps = require(Shared.Config.LiveOps)
 local Signal = require(Shared.Util.Signal)
 local Net = require(Shared.Util.Net)
 
@@ -69,6 +70,10 @@ local function newTemplate()
 		Eggs = {}, -- { { Uid, EggId, HatchAt }, ... }
 		BuildInventory = {}, -- buildingId -> count bought but not placed
 		Buildings = {}, -- placed on the plot: { { Uid, Id, X, Z, R }, ... }
+		DailyStreak = 0,
+		LastDailyDay = -1,
+		Quests = { Day = -1, List = {} },
+		Boosts = { Coins = 0, Xp = 0 },
 		NextUid = 1,
 		Totals = { FruitsSliced = 0, EggsHatched = 0, BestCombo = 0, CoinsEarned = 0, BombsHit = 0, TrainingsDone = 0 },
 		LastJoin = 0,
@@ -194,6 +199,19 @@ local function sanitize(profile: any)
 		end
 	end
 	profile.Buildings = placed
+
+	profile.DailyStreak = math.floor(sanitizeNumber(profile.DailyStreak, 0, 0, #LiveOps.Daily))
+	profile.LastDailyDay = math.floor(sanitizeNumber(profile.LastDailyDay, -1))
+	for kind in profile.Boosts do
+		profile.Boosts[kind] = sanitizeNumber(profile.Boosts[kind], 0, 0)
+	end
+	local quests = {}
+	for _, quest in (type(profile.Quests.List) == "table" and profile.Quests.List or {}) do
+		if type(quest) == "table" and LiveOps.QuestById[quest.Id] and type(quest.Target) == "number" and type(quest.Progress) == "number" then
+			table.insert(quests, quest)
+		end
+	end
+	profile.Quests.List = quests
 	profile.NextUid = math.floor(sanitizeNumber(profile.NextUid, 1, 1))
 end
 

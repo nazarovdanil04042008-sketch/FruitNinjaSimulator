@@ -43,6 +43,8 @@ Net.Events = {
 	"TradeInvite",
 	"TradeUpdate",
 	"TradeClosed",
+	"BossAttack",
+	"BossEvent",
 }
 
 Net.Functions = {

@@ -19,6 +19,9 @@
 | `SlicingService` | Rounds, pad assignment, wave scheduler, slice validation, combos, frenzy, bombs and hearts, round summary |
 | `BuildingService` | Ninja Village plots (one per player, 8 per server), BuyBuilding / PlaceBuilding / MoveBuilding / RemoveBuilding / TeleportToPlot, spawns building models; grid rules shared with the client via `Util/PlotGrid` |
 | `TradeService` | Trade requests, offers, Ready/Confirm with a 3 s safety lock, atomic swap with full re-validation, immediate save of both players |
+| `EventService` | Timed events from `LiveOps.CurrentEvent` (same on every server); multipliers read by Slicing/Egg services; Workspace attributes `FNS_EventId`, `FNS_EventEnds` |
+| `BossService` | World boss every 30 min: HP scaled to online players, `BossAttack` remote (range / rate / stun checks), slam telegraphs, damage-share rewards; Workspace attributes `FNS_Boss*` |
+| `RewardService` | `ClaimDaily`, `ClaimPlaytime`, `ClaimQuest`; daily quest generation; listens to `QuestBus` progress fired by other services |
 | `TrainingService` | Start / Finish / Cancel training with one-time tokens, duration and score validation, cooldowns, rewards |
 
 ## Client modules

@@ -25,6 +25,7 @@ local Buildings = require(Config.Buildings)
 local PlotGrid = require(Shared.Util.PlotGrid)
 local ModelBuilder = require(Shared.Util.ModelBuilder)
 local JapaneseBuilder = require(Shared.Util.JapaneseBuilder)
+local LiveOps = require(Config.LiveOps)
 
 local SelfTest = {}
 
@@ -208,6 +209,34 @@ function SelfTest.Run()
 	tryBuild("egg", function()
 		return ModelBuilder.Egg(Color3.new(1, 1, 1), Color3.new(1, 0, 0), nil, 3)
 	end)
+
+	-- Live ops: bosses, events, rewards, quests
+	for _, boss in LiveOps.Bosses do
+		check("boss creature " .. boss.Id, Creatures.Get(boss.CreatureId) ~= nil)
+		check("boss slam fits arena " .. boss.Id, boss.SlamRadius < LiveOps.BossArenaRadius)
+	end
+	for _, list: { any } in { LiveOps.Daily, LiveOps.Playtime } do
+		for i, reward in list do
+			check("reward egg exists #" .. i, reward.Egg == nil or Eggs.Get(reward.Egg) ~= nil, reward.Egg)
+			check("reward boost kind #" .. i, reward.Boost == nil or reward.Boost == "Coins" or reward.Boost == "Xp")
+		end
+	end
+	for _, quest in LiveOps.Quests do
+		check("quest range " .. quest.Id, quest.Min <= quest.Max and quest.Min > 0)
+		check("quest egg " .. quest.Id, quest.Egg == nil or Eggs.Get(quest.Egg) ~= nil)
+	end
+	check("quests per day", #LiveOps.Quests >= LiveOps.QuestsPerDay)
+	local base = 1800 * 1000
+	local e1 = LiveOps.CurrentEvent(base + 10 * 60 + 5)
+	local e0 = LiveOps.CurrentEvent(base + 5)
+	check("event schedule active", e1 ~= nil)
+	check("event schedule idle", e0 == nil)
+	check("next boss on half hour", LiveOps.NextBossAt(base + 7) == base + 1800)
+	for _, event in LiveOps.Events do
+		for kind in event.Multipliers do
+			check("event multiplier kind " .. event.Id, table.find({ "Coins", "Xp", "EggChance", "GoldenChance", "Luck", "SpawnRate" }, kind) ~= nil, kind)
+		end
+	end
 
 	-- Formatting
 	check("format short 999", Format.Short(999) == "999", Format.Short(999))

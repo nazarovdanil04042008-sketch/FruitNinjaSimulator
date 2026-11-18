@@ -13,11 +13,11 @@ export type UpgradeDef = {
 }
 
 local list: { UpgradeDef } = {
-	{ Id = "Speed", DisplayName = "Speed", Emoji = "⚡", Color = Color3.fromRGB(60, 200, 255), BaseCost = 20, Growth = 1.12,
+	{ Id = "Speed", DisplayName = "Speed", Emoji = "⚡", Color = Color3.fromRGB(60, 200, 255), BaseCost = 30, Growth = 1.135,
 		Description = "Run faster and fruits are launched more often." },
-	{ Id = "Strength", DisplayName = "Strength", Emoji = "💪", Color = Color3.fromRGB(255, 90, 80), BaseCost = 25, Growth = 1.13,
+	{ Id = "Strength", DisplayName = "Strength", Emoji = "💪", Color = Color3.fromRGB(255, 90, 80), BaseCost = 38, Growth = 1.145,
 		Description = "+4% coins from every slice per level." },
-	{ Id = "Agility", DisplayName = "Agility", Emoji = "🌀", Color = Color3.fromRGB(120, 230, 90), BaseCost = 30, Growth = 1.13,
+	{ Id = "Agility", DisplayName = "Agility", Emoji = "🌀", Color = Color3.fromRGB(120, 230, 90), BaseCost = 45, Growth = 1.145,
 		Description = "Bigger blade hitbox, faster slicing, longer combos, higher jumps." },
 }
 

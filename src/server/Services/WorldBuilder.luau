@@ -22,6 +22,7 @@ local WorldBuilder = {}
 local FONT = Enum.Font.FredokaOne
 local LAKE_CENTER = require(Shared.Config.GameConfig).Lake.Center
 local LAKE_RADIUS = require(Shared.Config.GameConfig).Lake.Radius
+local LiveOps = require(Shared.Config.LiveOps)
 
 local function c(r: number, g: number, b: number): Color3
 	return Color3.fromRGB(r, g, b)
@@ -165,16 +166,36 @@ local function lantern(parent: Instance, position: Vector3, scale: number?)
 	return place(parent, JapaneseBuilder.StoneLantern(scale or 1), CFrame.new(position))
 end
 
+-- Custom decoration: a model in ReplicatedStorage.Assets.Decor.<Name> (assets/Decor/<Name>.rbxm)
+-- replaces the procedural one, scaled to `height` (e.g. a realistic sakura from the Creator Store).
+local function decorOverride(name: string, height: number): Model?
+	local model = ModelBuilder.GetOverride("Decor", name)
+	if not model then
+		return nil
+	end
+	model = ModelBuilder.PrepareOverride(model, height, true, false)
+	for _, d in model:GetDescendants() do
+		if d:IsA("BasePart") then
+			d.Anchored = true
+			d.CanQuery = true
+		end
+	end
+	return model
+end
+
 local sakuraSeed = 0
 local function sakura(parent: Instance, position: Vector3, scale: number?)
 	sakuraSeed += 1
-	return place(parent, JapaneseBuilder.Sakura(scale or 1.2, sakuraSeed), CFrame.new(position) * CFrame.Angles(0, sakuraSeed * 1.3, 0))
+	local s = scale or 1.2
+	local model = decorOverride("SakuraTree", 12 * s) or JapaneseBuilder.Sakura(s, sakuraSeed)
+	return place(parent, model, CFrame.new(position) * CFrame.Angles(0, sakuraSeed * 1.3, 0))
 end
 
 local treeSeed = 0
 local function tree(parent: Instance, position: Vector3, _leafColor: Color3, _fruitColor: Color3?, scale: number)
 	treeSeed += 1
-	return place(parent, JapaneseBuilder.BigTree(scale * 0.6, treeSeed), CFrame.new(position) * CFrame.Angles(0, treeSeed * 2.1, 0))
+	local model = decorOverride("BigTree", 26 * scale * 0.6) or JapaneseBuilder.BigTree(scale * 0.6, treeSeed)
+	return place(parent, model, CFrame.new(position) * CFrame.Angles(0, treeSeed * 2.1, 0))
 end
 
 local decorRng = Random.new(77)
@@ -186,7 +207,8 @@ local bushSeed = 0
 local BUSH_FLOWERS = { nil, Color3.fromRGB(255, 120, 170), Color3.fromRGB(250, 250, 250), Color3.fromRGB(190, 120, 255), nil }
 local function bush(parent: Instance, position: Vector3, scale: number?)
 	bushSeed += 1
-	return place(parent, JapaneseBuilder.Bush(scale or 1.2, bushSeed, BUSH_FLOWERS[bushSeed % #BUSH_FLOWERS + 1]), CFrame.new(position))
+	local model = decorOverride("Bush", 3 * (scale or 1.2)) or JapaneseBuilder.Bush(scale or 1.2, bushSeed, BUSH_FLOWERS[bushSeed % #BUSH_FLOWERS + 1])
+	return place(parent, model, CFrame.new(position) * CFrame.Angles(0, bushSeed, 0))
 end
 
 ------------------------------------------------------------------------------------------------
@@ -360,6 +382,9 @@ local function buildArena(world: Instance, arena: Arenas.ArenaDef)
 		-- Mount Fuji and a red sun painted on the backdrop
 		local sun = part(folder, { Name = "Sun", Shape = "Cylinder", Size = Vector3.new(0.4, 16, 16), CFrame = CFrame.new(o + Vector3.new(22, 25, -25.8)) * CFrame.Angles(0, math.rad(90), 0), Color = c(235, 60, 50), Material = Enum.Material.Neon, CanCollide = false })
 		sun.Transparency = 0.1
+		-- distant lighter peaks first (partly hidden behind Fuji), then Fuji itself
+		place(folder, JapaneseBuilder.Mountain(46, 15, 0.6, c(135, 155, 195)), CFrame.new(o + Vector3.new(-38, 4, -25.6)))
+		place(folder, JapaneseBuilder.Mountain(40, 13, 0.6, c(140, 160, 200)), CFrame.new(o + Vector3.new(30, 4, -25.6)))
 		place(folder, JapaneseBuilder.Mountain(70, 24, 2), CFrame.new(o + Vector3.new(-6, 4, -25)))
 	end
 
@@ -647,6 +672,41 @@ local function buildLake(world: Instance)
 	end
 end
 
+local function buildBossArena(world: Instance)
+	local folder = Instance.new("Folder")
+	folder.Name = "BossArena"
+	folder.Parent = world
+	local o = LiveOps.BossArena
+	local r = LiveOps.BossArenaRadius
+	disc(folder, o + Vector3.new(0, 0.4, 0), r * 2 + 6, 0.8, c(55, 50, 55), Enum.Material.Slate)
+	disc(folder, o + Vector3.new(0, 0.55, 0), r * 2, 0.8, c(35, 32, 38), Enum.Material.Slate)
+	disc(folder, o + Vector3.new(0, 0.62, 0), r * 1.2, 0.8, c(120, 25, 35), Enum.Material.Slate)
+	disc(folder, o + Vector3.new(0, 0.7, 0), r * 0.5, 0.8, c(25, 22, 28), Enum.Material.Slate)
+	-- ring of tall red pillars with fire braziers
+	for i = 0, 7 do
+		local a = i / 8 * math.pi * 2 + math.pi / 8
+		local pos = o + Vector3.new(math.cos(a) * (r + 1), 0, math.sin(a) * (r + 1))
+		JapaneseBuilder.Post(folder :: any, pos + Vector3.new(0, 8, 0), 16, 2.2, c(190, 35, 30), Enum.Material.SmoothPlastic)
+		local bowl = part(folder, { Name = "Brazier", Size = Vector3.new(3.4, 1, 3.4), Position = pos + Vector3.new(0, 16.5, 0), Color = c(40, 35, 35), Material = Enum.Material.Metal })
+		local fire = Instance.new("Fire")
+		fire.Size = 6
+		fire.Heat = 9
+		fire.Color = c(255, 120, 30)
+		fire.SecondaryColor = c(255, 40, 0)
+		fire.Parent = bowl
+		local light = Instance.new("PointLight")
+		light.Color = c(255, 120, 50)
+		light.Range = 24
+		light.Brightness = 2
+		light.Parent = bowl
+	end
+	torii(folder, o + Vector3.new(0, 0, -(r + 6)), 0, 22, 19)
+	local signPart = part(folder, { Name = "BossSign", Size = Vector3.new(20, 4, 0.6), Position = o + Vector3.new(0, 23, -(r + 6)), Color = c(30, 20, 20) })
+	surfaceText(signPart, "👹 BOSS ARENA 👹", c(255, 90, 70), { Enum.NormalId.Back, Enum.NormalId.Front })
+	billboard(signPart, "👹 WORLD BOSS", "Every 30 minutes • fight together!", c(255, 90, 70), 6)
+	part(folder, { Name = "RoadBoss", Size = Vector3.new(14, 0.2, o.Z - r - 30), Position = Vector3.new(o.X, 0.1, 30 + (o.Z - r - 30) / 2), Color = c(175, 170, 160), Material = Enum.Material.Cobblestone })
+end
+
 local function buildDecorHouses(world: Instance)
 	local folder = Instance.new("Folder")
 	folder.Name = "DecorHouses"
@@ -803,12 +863,14 @@ local function buildScenery(world: Instance)
 			or ((Vector2.new(x, z) - Vector2.new(LAKE_CENTER.X, LAKE_CENTER.Z)).Magnitude < LAKE_RADIUS + 12) -- lake
 			or (math.abs(x + 105) < 22 and math.abs(z + 80) < 22) or (math.abs(x - 105) < 20 and math.abs(z + 80) < 20)
 			or (math.abs(x + 105) < 18 and math.abs(z - 70) < 18) -- decorative houses
+			or (math.abs(x - LiveOps.BossArena.X) < 58 and math.abs(z - LiveOps.BossArena.Z) < 58) -- boss arena
+			or (math.abs(x - LiveOps.BossArena.X) < 12 and z > 25 and z < 140) -- boss road
 		if not clear then
 			local kind = rng:NextInteger(1, 3)
 			if kind == 1 then
 				sakura(folder, Vector3.new(x, 0, z), rng:NextNumber(1.9, 2.7))
 			elseif kind == 2 then
-				place(folder, JapaneseBuilder.Bamboo(9, rng:NextInteger(1, 999)), CFrame.new(x, 0, z))
+				place(folder, decorOverride("Bamboo", 17) or JapaneseBuilder.Bamboo(9, rng:NextInteger(1, 999)), CFrame.new(x, 0, z))
 			else
 				tree(folder, Vector3.new(x, 0, z), c(60 + rng:NextInteger(0, 40), 170, 60), fruitColors[rng:NextInteger(1, 4)], rng:NextNumber(1.6, 2.4))
 			end
@@ -821,6 +883,7 @@ local function buildScenery(world: Instance)
 		local inArea = (math.abs(x) < 45 and math.abs(z) < 45) or (z < -125 and z > -260 and math.abs(x) < 240) or (math.abs(x - 190) < 58 and math.abs(z) < 58)
 			or (math.abs(x + 190) < 52 and math.abs(z) < 52) or (math.abs(x) < 50 and math.abs(z - 170) < 50) or (x < -70 and x > -315 and z > 105 and z < 268)
 			or ((Vector2.new(x, z) - Vector2.new(LAKE_CENTER.X, LAKE_CENTER.Z)).Magnitude < LAKE_RADIUS + 3)
+			or (math.abs(x - LiveOps.BossArena.X) < 55 and math.abs(z - LiveOps.BossArena.Z) < 55) or (math.abs(x - LiveOps.BossArena.X) < 10 and z > 25 and z < 140)
 		if not onRoad and not inArea then
 			bush(folder, Vector3.new(x, 0, z), rng:NextNumber(0.9, 1.6))
 		end
@@ -929,6 +992,7 @@ function WorldBuilder.Init()
 	buildHatchery(world)
 	buildVillage(world)
 	buildLake(world)
+	buildBossArena(world)
 	buildDecorHouses(world)
 	buildFences(world)
 	buildRoadside(world)

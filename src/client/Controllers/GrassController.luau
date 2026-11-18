@@ -15,10 +15,10 @@ local player = Players.LocalPlayer
 local folder: Folder
 local rng = Random.new()
 
-local RADIUS = 32
+local RADIUS = 30
 local MOBILE = UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
-local BLADE_COUNT = MOBILE and 150 or 260
-local RECYCLE_PER_FRAME = 14
+local BLADE_COUNT = MOBILE and 320 or 650
+local RECYCLE_PER_FRAME = 24
 local PUSH_RADIUS = 3
 local HIDDEN = CFrame.new(0, -400, 0)
 
@@ -30,7 +30,8 @@ local params = RaycastParams.new()
 local recycleIndex = 1
 
 local COLORS = {
-	Color3.fromRGB(88, 160, 66), Color3.fromRGB(104, 176, 74), Color3.fromRGB(76, 145, 58), Color3.fromRGB(120, 185, 80), Color3.fromRGB(95, 168, 60),
+	Color3.fromRGB(88, 160, 66), Color3.fromRGB(104, 176, 74), Color3.fromRGB(76, 145, 58), Color3.fromRGB(120, 185, 80),
+	Color3.fromRGB(95, 168, 60), Color3.fromRGB(70, 135, 50), Color3.fromRGB(130, 190, 90), Color3.fromRGB(110, 160, 60),
 }
 
 local function focus(): (Vector3?, Vector3)
@@ -130,14 +131,15 @@ function GrassController.Init()
 	folder.Name = "FNS_Grass"
 	folder.Parent = workspace
 	for _ = 1, BLADE_COUNT do
-		local height = rng:NextNumber(0.9, 1.8)
+		-- mostly short blades, some taller ones, so the field looks natural
+		local height = rng:NextNumber() < 0.75 and rng:NextNumber(0.6, 1.3) or rng:NextNumber(1.3, 2.3)
 		local blade = Instance.new("WedgePart")
 		blade.Anchored = true
 		blade.CanCollide = false
 		blade.CanQuery = false
 		blade.CanTouch = false
 		blade.CastShadow = false
-		blade.Size = Vector3.new(0.07, height, 0.32)
+		blade.Size = Vector3.new(0.035, height, rng:NextNumber(0.12, 0.2))
 		blade.Color = COLORS[rng:NextInteger(1, #COLORS)]
 		blade.Material = Enum.Material.SmoothPlastic
 		blade.CFrame = HIDDEN

@@ -8,6 +8,7 @@
 | Брейнроты | `assets/Creatures/` | `ReplicatedStorage → Assets → Creatures` |
 | Постройки деревни | `assets/Buildings/` | `ReplicatedStorage → Assets → Buildings` |
 | Катаны | `assets/Katanas/` | `ReplicatedStorage → Assets → Katanas` |
+| Деревья и кусты на карте | `assets/Decor/` | `ReplicatedStorage → Assets → Decor` |
 
 ⚠️ **Если вы собираете игру через `rojo build`, модели должны лежать в папке `assets/` как файлы `.rbxm`.** Если добавить их прямо в Studio, то при следующем `rojo build` файл `.rbxl` перезапишется и модели пропадут.
 
@@ -49,6 +50,9 @@
 `StoneLantern`, `PaperLantern`, `Bonsai`, `BambooGrove`, `SakuraTree`, `ZenGarden`, `KoiPond`, `ToriiGate`, `Bridge`, `Shrine`, `TeaHouse`, `BellTower`, `MinkaHouse`, `Pagoda`
 
 Модель постройки ставится **низом на землю**, и игра подгоняет её под размер клеток на участке.
+
+## Id декора (деревья на карте)
+`SakuraTree`, `BigTree`, `Bush`, `Bamboo` — если положить модель с таким именем, **все** такие деревья/кусты на карте заменятся ею (размер подгоняется автоматически). Это самый быстрый способ сделать мир реалистичнее: найдите в Toolbox красивую сакуру (поиск «sakura tree» / «cherry blossom»), проверьте что внутри нет скриптов, назовите `SakuraTree` и сохраните в `assets/Decor/`.
 
 ## Id катан
 `Wooden`, `Iron`, `Golden`, `Diamond`, `Fire`, `Lightning`, `Cosmic`, `Mythical`

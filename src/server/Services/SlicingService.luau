@@ -26,6 +26,8 @@ local Net = require(Shared.Util.Net)
 local DataService = require(script.Parent.DataService)
 local ProgressionService = require(script.Parent.ProgressionService)
 local EggService = require(script.Parent.EggService)
+local EventService = require(script.Parent.EventService)
+local QuestBus = require(script.Parent.QuestBus)
 
 local SlicingService = {}
 
@@ -223,14 +225,16 @@ local function chooseObject(arena: Arenas.ArenaDef, session: Session, t: number)
 		end
 		roll -= arena.BombChance
 	end
-	if roll < arena.EggChance then
+	local eggChance = arena.EggChance * EventService.Get("EggChance")
+	local goldenChance = arena.GoldenChance * EventService.Get("GoldenChance")
+	if roll < eggChance then
 		return pickWeighted(arena.EggWeights)
 	end
-	roll -= arena.EggChance
-	if roll < arena.GoldenChance then
+	roll -= eggChance
+	if roll < goldenChance then
 		return "GoldenApple"
 	end
-	roll -= arena.GoldenChance
+	roll -= goldenChance
 	if not frenzy and roll < arena.FrenzyChance then
 		return "FrenzyStar"
 	end
@@ -293,7 +297,7 @@ local function tick()
 		end
 		if t >= session.NextSpawn then
 			spawnWave(player, session, t)
-			local interval = session.Derived.SpawnInterval
+			local interval = session.Derived.SpawnInterval / EventService.Get("SpawnRate")
 			if t < session.FrenzyUntil then
 				interval *= 0.45
 			end
@@ -365,8 +369,14 @@ local function onSlice(player: Player, ids: any)
 		session.LastSliceTime = t
 		session.BestCombo = math.max(session.BestCombo, session.Combo)
 
-		local coins = Formulas.SliceCoins(def.Coins, derived, arena.CoinMultiplier, session.Combo)
-		local xp = Formulas.SliceXp(def.Xp, derived, arena.XpMultiplier)
+		local coins = math.floor(Formulas.SliceCoins(def.Coins, derived, arena.CoinMultiplier, session.Combo) * EventService.Get("Coins"))
+		local xp = math.floor(Formulas.SliceXp(def.Xp, derived, arena.XpMultiplier) * EventService.Get("Xp"))
+		if session.Combo == 5 then
+			QuestBus.Fire(player, "Combo5", 1)
+		end
+		if def.Kind == "Golden" then
+			QuestBus.Fire(player, "Golden", 1)
+		end
 		local result = { Id = id, Kind = def.Kind, Coins = coins, Xp = xp, Combo = session.Combo }
 
 		if def.Kind == "Frenzy" then
@@ -393,6 +403,16 @@ local function onSlice(player: Player, ids: any)
 	end
 	if coinsTotal > 0 then
 		ProgressionService.AddCoins(player, coinsTotal)
+		QuestBus.Fire(player, "EarnCoins", coinsTotal)
+	end
+	local slicedCount = 0
+	for _, r in results do
+		if r.Kind ~= "Bomb" then
+			slicedCount += 1
+		end
+	end
+	if slicedCount > 0 then
+		QuestBus.Fire(player, "Slice", slicedCount)
 	end
 	if xpTotal > 0 then
 		ProgressionService.AddXp(player, xpTotal)

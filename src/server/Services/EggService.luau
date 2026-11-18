@@ -19,6 +19,8 @@ local DataService = require(script.Parent.DataService)
 local ActionService = require(script.Parent.ActionService)
 local ProgressionService = require(script.Parent.ProgressionService)
 local EquipmentService = require(script.Parent.EquipmentService)
+local EventService = require(script.Parent.EventService)
+local QuestBus = require(script.Parent.QuestBus)
 
 local EggService = {}
 
@@ -26,16 +28,26 @@ local rng = Random.new()
 local hatchRevealRemote: RemoteEvent
 
 local function rollRarity(egg: Eggs.EggDef): string
+	-- Lucky Hatch event: Epic and rarer become more likely
+	local luck = EventService.Get("Luck")
+	local function weightOf(rarity: any): number?
+		local weight = egg.Weights[rarity.Name]
+		if weight and rarity.Order >= 4 then
+			weight *= luck
+		end
+		return weight
+	end
 	local total = 0
-	for rarityName, weight in egg.Weights do
-		if Creatures.ByRarity[rarityName] then
+	for _, rarity in Rarities.List do
+		local weight = weightOf(rarity)
+		if weight and Creatures.ByRarity[rarity.Name] then
 			total += weight
 		end
 	end
 	local roll = rng:NextNumber(0, total)
 	-- iterate in rarity order so results are deterministic for a given roll
 	for _, rarity in Rarities.List do
-		local weight = egg.Weights[rarity.Name]
+		local weight = weightOf(rarity)
 		if weight and Creatures.ByRarity[rarity.Name] then
 			roll -= weight
 			if roll <= 0 then
@@ -117,6 +129,7 @@ local function hatch(player: Player, profile: any, index: number, egg: any): (bo
 	profile.Creatures[uid] = { Id = creatureId, Obtained = os.time() }
 	profile.Discovered[creatureId] = true
 	profile.Totals.EggsHatched += 1
+	QuestBus.Fire(player, "Hatch", 1)
 
 	-- Auto-equip into a free slot so new players immediately feel the bonus.
 	if #profile.EquippedCreatures < Formulas.PetSlots(profile.Level) then

@@ -171,25 +171,51 @@ function JapaneseBuilder.PaperLantern(): Model
 end
 
 function JapaneseBuilder.Sakura(scale: number?, seed: number?): Model
+	-- Natural-looking cherry tree: thick leaning trunk, several branches, and a canopy made of many
+	-- blossom clusters of very different sizes (big puffs + small ones) instead of a few equal balls.
 	local s = scale or 1
 	local rng = Random.new(seed or 7)
-	local model = newModel("SakuraTree", 6 * s, 6 * s)
-	local bark = c(80, 50, 45)
-	part(model, CFrame.new(0, 2.5 * s, 0) * CFrame.Angles(0, 0, math.rad(90 + rng:NextNumber(-6, 6))), Vector3.new(5 * s, 1.1 * s, 1.1 * s), bark, Enum.Material.Wood, "Cylinder")
+	local model = newModel("SakuraTree", 7 * s, 7 * s)
+	local bark = c(78, 48, 42)
+	local lean = rng:NextNumber(-8, 8)
+	part(model, CFrame.new(0, 2.6 * s, 0) * CFrame.Angles(0, 0, math.rad(90 + lean)), Vector3.new(5.2 * s, 1.4 * s, 1.4 * s), bark, Enum.Material.Wood, "Cylinder")
 	for i = 0, 2 do
-		local a = math.rad(i * 120 + rng:NextNumber(-20, 20))
-		part(model, CFrame.new(math.cos(a) * 1.2 * s, 5.6 * s, math.sin(a) * 1.2 * s) * CFrame.Angles(0, -a, math.rad(40)), Vector3.new(3.2 * s, 0.6 * s, 0.6 * s), bark, Enum.Material.Wood, "Cylinder", false)
+		local a = math.rad(i * 120 + 40)
+		part(model, CFrame.Angles(0, a, 0) * CFrame.new(0, 0.5 * s, -0.9 * s), Vector3.new(0.6 * s, 1 * s, 1.2 * s), bark, Enum.Material.Wood, "Wedge", false)
 	end
-	local blobs = 5
-	for i = 1, blobs do
-		local a = math.rad(i * (360 / blobs) + rng:NextNumber(-25, 25))
-		local r = rng:NextNumber(1.2, 2.4) * s
-		local size = rng:NextNumber(3.6, 4.8) * s
-		part(model, CFrame.new(math.cos(a) * r, rng:NextNumber(7, 8.4) * s, math.sin(a) * r), Vector3.one * size,
-			COL.Sakura[rng:NextInteger(1, #COL.Sakura)], Enum.Material.Grass, "Ball", false)
+	local topPos = Vector3.new(-math.sin(math.rad(lean)) * 5 * s, 5 * s, 0)
+	local branchCount = rng:NextInteger(4, 6)
+	local blossomIndex = 0
+	local function blossom(position: Vector3, size: number)
+		blossomIndex += 1
+		local color = COL.Sakura[rng:NextInteger(1, #COL.Sakura)]
+		local p = part(model, CFrame.new(position), Vector3.one * size, color, Enum.Material.Grass, "Ball", false)
+		if blossomIndex == 1 then
+			p.Name = "SakuraCrown" -- falling petals are rendered client-side (AmbienceController)
+		end
 	end
-	local crown = part(model, CFrame.new(0, 9.2 * s, 0), Vector3.one * 4.4 * s, COL.Sakura[1], Enum.Material.Grass, "Ball", false)
-	crown.Name = "SakuraCrown" -- falling petals are rendered client-side (AmbienceController)
+	for i = 1, branchCount do
+		local yaw = i / branchCount * math.pi * 2 + rng:NextNumber(-0.4, 0.4)
+		local pitch = math.rad(rng:NextNumber(25, 50))
+		local length = rng:NextNumber(3.5, 5.5) * s
+		local direction = Vector3.new(math.cos(yaw) * math.cos(pitch), math.sin(pitch), math.sin(yaw) * math.cos(pitch))
+		local startPos = topPos + Vector3.new(0, rng:NextNumber(-1, 0.5) * s, 0)
+		local endPos = startPos + direction * length
+		local mid = (startPos + endPos) / 2
+		part(model, CFrame.lookAt(mid, endPos) * CFrame.Angles(0, math.rad(90), 0), Vector3.new(length, 0.55 * s, 0.55 * s), bark, Enum.Material.Wood, "Cylinder", false)
+		-- one big puff + several medium/small ones around the branch tip
+		blossom(endPos + Vector3.new(0, 0.6 * s, 0), rng:NextNumber(3.2, 4.4) * s)
+		for _ = 1, rng:NextInteger(3, 5) do
+			local offset = Vector3.new(rng:NextNumber(-2, 2), rng:NextNumber(-1, 1.6), rng:NextNumber(-2, 2)) * s
+			blossom(endPos + offset, rng:NextNumber(1, 2.6) * s)
+		end
+	end
+	-- fill the centre of the crown and a few hanging tufts
+	blossom(topPos + Vector3.new(0, 3.2 * s, 0), 4.2 * s)
+	for _ = 1, 4 do
+		local a = rng:NextNumber(0, math.pi * 2)
+		blossom(topPos + Vector3.new(math.cos(a) * 2.5 * s, rng:NextNumber(0.5, 3) * s, math.sin(a) * 2.5 * s), rng:NextNumber(0.8, 1.8) * s)
+	end
 	return model
 end
 
@@ -329,9 +355,10 @@ function JapaneseBuilder.BigTree(scale: number?, seed: number?, leafColors: { Co
 		local endPos = startPos + direction * length
 		local mid = (startPos + endPos) / 2
 		part(model, CFrame.lookAt(mid, endPos) * CFrame.Angles(0, math.rad(90), 0), Vector3.new(length, 0.9 * s, 0.9 * s), bark, Enum.Material.Wood, "Cylinder", false)
-		for k = 1, 3 do
-			local size = rng:NextNumber(5, 7.5) * s
-			local offset = Vector3.new(rng:NextNumber(-2, 2), rng:NextNumber(-0.5, 2), rng:NextNumber(-2, 2)) * s
+		part(model, CFrame.new(endPos + Vector3.new(0, 1, 0) * s), Vector3.one * rng:NextNumber(6, 8) * s, leaves[rng:NextInteger(1, #leaves)], Enum.Material.Grass, "Ball", false)
+		for _ = 1, rng:NextInteger(3, 5) do
+			local size = rng:NextNumber(2, 4.5) * s
+			local offset = Vector3.new(rng:NextNumber(-3.5, 3.5), rng:NextNumber(-1.5, 2.5), rng:NextNumber(-3.5, 3.5)) * s
 			part(model, CFrame.new(endPos + offset), Vector3.one * size, leaves[rng:NextInteger(1, #leaves)], Enum.Material.Grass, "Ball", false)
 		end
 	end
@@ -580,17 +607,31 @@ function JapaneseBuilder.Pagoda(baseSize: number?, tiers: number?): Model
 end
 
 -- Big decorative mountain (e.g. a Fuji-like backdrop). Origin at its base centre.
-function JapaneseBuilder.Mountain(width: number, height: number, depth: number?): Model
-	-- Two wedges seen side-on give a clean triangular silhouette from the front, plus a snow cap.
+function JapaneseBuilder.Mountain(width: number, height: number, depth: number?, color: Color3?): Model
+	-- Two wedges seen side-on give a triangular silhouette from the +Z side (the side the arena camera
+	-- looks at), plus a snow cap with little "drips" placed slightly in FRONT so it is always visible.
 	local d = depth or 4
 	local model = newModel("Mountain", width, d)
-	local function triangle(w: number, h: number, baseY: number, z: number, color: Color3, material: Enum.Material?)
-		part(model, CFrame.new(-w / 4, baseY + h / 2, z) * CFrame.Angles(0, math.pi / 2, 0), Vector3.new(d, h, w / 2), color, material, "Wedge", false)
-		part(model, CFrame.new(w / 4, baseY + h / 2, z) * CFrame.Angles(0, -math.pi / 2, 0), Vector3.new(d, h, w / 2), color, material, "Wedge", false)
+	local function triangle(w: number, h: number, baseY: number, z: number, thickness: number, col: Color3, material: Enum.Material?)
+		part(model, CFrame.new(-w / 4, baseY + h / 2, z) * CFrame.Angles(0, math.pi / 2, 0), Vector3.new(thickness, h, w / 2), col, material, "Wedge", false)
+		part(model, CFrame.new(w / 4, baseY + h / 2, z) * CFrame.Angles(0, -math.pi / 2, 0), Vector3.new(thickness, h, w / 2), col, material, "Wedge", false)
 	end
-	triangle(width, height, 0, 0, c(90, 110, 150), Enum.Material.Slate)
-	local capHeight = height * 0.3
-	triangle(width * 0.3, capHeight, height - capHeight + 0.05, -0.15, c(250, 250, 255), Enum.Material.Snow)
+	triangle(width, height, 0, 0, d, color or c(80, 100, 145), Enum.Material.Slate)
+	local snow = c(250, 252, 255)
+	local capHeight = height * 0.36
+	local capWidth = width * capHeight / height
+	triangle(capWidth, capHeight, height - capHeight + 0.02, d / 2 + 0.15, 0.3, snow, Enum.Material.Snow)
+	-- jagged snow line: flattened white blobs hanging below the cap's lower edge
+	for k = -2, 2 do
+		local blobWidth = capWidth * (0.16 + (k % 2) * 0.06)
+		local blobHeight = capHeight * (0.35 + ((k + 2) % 3) * 0.12)
+		local x = k * capWidth * 0.17
+		local y = height - capHeight + blobHeight * 0.1
+		local blob = part(model, CFrame.new(x, y, d / 2 + 0.25), Vector3.new(blobWidth, blobHeight, 0.3), snow, Enum.Material.Snow, nil, false)
+		local mesh = Instance.new("SpecialMesh")
+		mesh.MeshType = Enum.MeshType.Sphere
+		mesh.Parent = blob
+	end
 	return model
 end
 

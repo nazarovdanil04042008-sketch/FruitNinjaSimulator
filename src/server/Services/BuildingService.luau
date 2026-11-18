@@ -15,6 +15,7 @@ local Format = require(Shared.Util.Format)
 local DataService = require(script.Parent.DataService)
 local ActionService = require(script.Parent.ActionService)
 local ProgressionService = require(script.Parent.ProgressionService)
+local QuestBus = require(script.Parent.QuestBus)
 
 local BuildingService = {}
 
@@ -207,6 +208,7 @@ function BuildingService.Init()
 		table.insert(profile.Buildings, item)
 		spawnModel(player, plot, item)
 		afterChange(player)
+		QuestBus.Fire(player, "Build", 1)
 		return true, def.DisplayName .. " built!", item.Uid
 	end)
 
