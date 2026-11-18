@@ -118,6 +118,13 @@ These are all created by code at runtime, so the scripts never depend on objects
 
 **Customising the map by hand:** press Play, select `Workspace.FNS_World`, copy it, stop the game, paste it into Workspace and edit it. `WorldBuilder` skips generation when `FNS_World` already exists. Keep the ProximityPrompts' attributes (`Action`, `Arena`, `Activity`, `Window`) and the `FNS_Gate` parts.
 
+## 4b. Best graphics (optional, 30 seconds)
+Some settings can only be changed in Studio, not by scripts:
+1. **Explorer → Lighting → Properties → Technology = Future** (soft shadows + glowing lanterns at night).
+2. **Explorer → Workspace → Terrain → Properties → Decoration = ✓** (animated grass blades). Only needed if the Output shows *"Enable grass blades manually"*.
+3. **File → Studio Settings → Rendering → Editor Quality Level = Automatic or Level 21**, otherwise Studio may render the game in low quality.
+4. Save the place (Ctrl+S). If you rebuild with `rojo build`, repeat steps 1-2 afterwards (or keep the place file and only use `rojo serve` to sync code).
+
 ## 5. Test checklist (Studio → Play, or Test → Start with 2 players)
 - [ ] Output shows `Server ready`, `Client ready` and `[SelfTest] … 0 failed`.
 - [ ] Walk north and step on a Sunny Orchard pad, then press E. The camera locks and fruit flies up.

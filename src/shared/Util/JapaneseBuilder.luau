@@ -26,7 +26,6 @@ JapaneseBuilder.Colors = {
 }
 local COL = JapaneseBuilder.Colors
 
-local PETAL_TEXTURE = "rbxasset://textures/particles/sparkles_main.dds"
 
 ------------------------------------------------------------------------------------------------
 -- Part helpers
@@ -190,18 +189,7 @@ function JapaneseBuilder.Sakura(scale: number?, seed: number?): Model
 			COL.Sakura[rng:NextInteger(1, #COL.Sakura)], Enum.Material.Grass, "Ball", false)
 	end
 	local crown = part(model, CFrame.new(0, 9.2 * s, 0), Vector3.one * 4.4 * s, COL.Sakura[1], Enum.Material.Grass, "Ball", false)
-	local petals = Instance.new("ParticleEmitter")
-	petals.Texture = PETAL_TEXTURE
-	petals.Color = ColorSequence.new(c(255, 190, 215))
-	petals.Rate = 2
-	petals.Lifetime = NumberRange.new(3, 5)
-	petals.Speed = NumberRange.new(0.5, 1.5)
-	petals.SpreadAngle = Vector2.new(180, 180)
-	petals.Acceleration = Vector3.new(0.6, -1.5, 0)
-	petals.Size = NumberSequence.new(0.35)
-	petals.Rotation = NumberRange.new(0, 360)
-	petals.RotSpeed = NumberRange.new(-90, 90)
-	petals.Parent = crown
+	crown.Name = "SakuraCrown" -- falling petals are rendered client-side (AmbienceController)
 	return model
 end
 

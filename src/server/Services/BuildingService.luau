@@ -47,6 +47,8 @@ local function buildPlot(index: number, center: Vector3): Plot
 	local size = Buildings.PlotSize
 	local base = newPart(folder, Vector3.new(size, 1, size), CFrame.new(center + Vector3.new(0, 0.5, 0)), Color3.fromRGB(125, 190, 95), Enum.Material.Grass)
 	base.Name = "PlotBase"
+	-- no grass blades poking through the plot floor
+	workspace.Terrain:FillBlock(CFrame.new(center.X, -2, center.Z), Vector3.new(size, 4, size), Enum.Material.Ground)
 	-- subtle grid lines so players can see the cells
 	for i = 1, PlotGrid.Size - 1 do
 		local offset = -size / 2 + i * PlotGrid.Cell

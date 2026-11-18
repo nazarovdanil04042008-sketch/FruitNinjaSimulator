@@ -5,12 +5,17 @@
 local GameConfig = {}
 
 -- Shown on screen (bottom-left) and in the Output window, so you can always see which build you're running.
-GameConfig.Version = "2.0 - Japanese Village"
+GameConfig.Version = "2.1 - Beautiful World"
 
 GameConfig.DataStoreName = "FruitNinjaSimulator_PlayerData_v1"
 GameConfig.DataVersion = 1
 GameConfig.AutosaveInterval = 90 -- seconds
 GameConfig.SessionLockTimeout = 60 * 10 -- a lock older than this is considered stale (crashed server)
+
+-- World / ambience
+GameConfig.Lake = { Center = Vector3.new(84, 0, 84), Radius = 26 }
+GameConfig.DayNightCycle = 12 * 60 -- seconds for a full day + night (synced for everyone via server time)
+GameConfig.DayFraction = 0.7 -- share of the cycle that is daytime
 
 -- Progression
 GameConfig.StartingCoins = 50

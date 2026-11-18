@@ -135,9 +135,20 @@ function UIKit.Button(props: { [string]: any }): TextButton
 		ZIndex = props.ZIndex or 1,
 		Parent = props.Parent,
 	})
-	UIKit.Corner(props.Radius or 12).Parent = button
-	UIKit.Stroke(2.5).Parent = button
-	UIKit.Gradient(Color3.new(1, 1, 1), Color3.fromRGB(190, 190, 190)).Parent = button
+	local radius = props.Radius or 12
+	UIKit.Corner(radius).Parent = button
+	local stroke = UIKit.Stroke(3, color:Lerp(Color3.new(0, 0, 0), 0.5))
+	stroke.Name = "Edge"
+	stroke.Parent = button
+	UIKit.Gradient(Color3.new(1, 1, 1), Color3.fromRGB(205, 205, 205)).Parent = button
+	-- 3D "lip" along the bottom edge and a glossy highlight on top
+	local lip = new("Frame", { Name = "Lip", BackgroundColor3 = color:Lerp(Color3.new(0, 0, 0), 0.35), BorderSizePixel = 0,
+		AnchorPoint = Vector2.new(0, 1), Position = UDim2.fromScale(0, 1), Size = UDim2.new(1, 0, 0, 5), ZIndex = props.ZIndex or 1, Parent = button })
+	UIKit.Corner(radius).Parent = lip
+	local gloss = new("Frame", { Name = "Gloss", BackgroundColor3 = Color3.new(1, 1, 1), BackgroundTransparency = 0.55, BorderSizePixel = 0,
+		Position = UDim2.fromOffset(5, 3), Size = UDim2.new(1, -10, 0.42, 0), ZIndex = props.ZIndex or 1, Parent = button })
+	UIKit.Corner(math.max(radius - 3, 4)).Parent = gloss
+	new("UIGradient", { Rotation = 90, Transparency = NumberSequence.new(0.15, 1), Parent = gloss })
 	local label = UIKit.Label({
 		Name = "Text",
 		Text = props.Text or "",
@@ -148,13 +159,16 @@ function UIKit.Button(props: { [string]: any }): TextButton
 		ZIndex = (props.ZIndex or 1) + 1,
 		RichText = props.RichText,
 		MaxTextSize = props.MaxTextSize or 30,
+		StrokeThickness = 2,
 	})
 	local scale = new("UIScale", { Parent = button })
 	button.MouseEnter:Connect(function()
-		UIKit.Tween(scale, 0.12, { Scale = 1.05 })
+		UIKit.Tween(scale, 0.12, { Scale = 1.06 })
+		UIKit.Tween(button, 0.12, { Rotation = -2 })
 	end)
 	button.MouseLeave:Connect(function()
 		UIKit.Tween(scale, 0.12, { Scale = 1 })
+		UIKit.Tween(button, 0.12, { Rotation = 0 })
 	end)
 	button.MouseButton1Down:Connect(function()
 		UIKit.Tween(scale, 0.07, { Scale = 0.92 })
@@ -186,6 +200,14 @@ function UIKit.SetButton(button: TextButton, text: string, color: Color3?)
 	end
 	if color then
 		button.BackgroundColor3 = color
+		local edge = button:FindFirstChild("Edge")
+		if edge and edge:IsA("UIStroke") then
+			edge.Color = color:Lerp(Color3.new(0, 0, 0), 0.5)
+		end
+		local lip = button:FindFirstChild("Lip")
+		if lip and lip:IsA("Frame") then
+			lip.BackgroundColor3 = color:Lerp(Color3.new(0, 0, 0), 0.35)
+		end
 	end
 end
 

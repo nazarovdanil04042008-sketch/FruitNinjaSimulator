@@ -20,6 +20,8 @@ local JapaneseBuilder = require(Shared.Util.JapaneseBuilder)
 local WorldBuilder = {}
 
 local FONT = Enum.Font.FredokaOne
+local LAKE_CENTER = require(Shared.Config.GameConfig).Lake.Center
+local LAKE_RADIUS = require(Shared.Config.GameConfig).Lake.Radius
 
 local function c(r: number, g: number, b: number): Color3
 	return Color3.fromRGB(r, g, b)
@@ -204,16 +206,70 @@ local function buildSpawn(world: Instance)
 	spawnLocation.TopSurface = Enum.SurfaceType.Smooth
 	spawnLocation.Parent = folder
 
-	-- Centrepiece: a giant watermelon with a giant katana stuck in it.
-	disc(folder, Vector3.new(0, 1.5, -8), 16, 2, c(200, 190, 170), Enum.Material.Slate)
-	part(folder, { Name = "GiantMelon", Shape = "Ball", Size = Vector3.one * 11, Position = Vector3.new(0, 7.5, -8), Color = c(40, 150, 50) })
-	part(folder, { Name = "GiantMelonSlice", Shape = "Ball", Size = Vector3.one * 10.2, Position = Vector3.new(0, 7.7, -8.6), Color = c(255, 70, 90), CanCollide = false })
-	local katana = ModelBuilder.Katana("Golden")
-	ModelBuilder.AnchorAll(katana)
-	katana:PivotTo(CFrame.new(1, 13, -8) * CFrame.Angles(0, math.rad(90), math.rad(-20)))
-	katana:ScaleTo(4)
-	katana.Parent = folder
-	billboard(folder:FindFirstChild("GiantMelon") :: BasePart, "🍉 FRUIT NINJA SIMULATOR 🍉", "Slice fruit • Train • Hatch creatures!", c(255, 220, 70), 14)
+	-- Centrepiece: a black stone medallion with glowing kanji and two katanas stuck in a rock.
+	-- Everything here is solid, so players can't walk through the swords.
+	local dais = disc(folder, Vector3.new(0, 1.2, -6), 26, 1.2, c(45, 45, 50), Enum.Material.Slate)
+	dais.Name = "CenterDais"
+	disc(folder, Vector3.new(0, 2, -6), 20, 0.8, c(30, 30, 34), Enum.Material.Slate)
+	local medallionCF = CFrame.new(0, 13.6, -10) * CFrame.Angles(0, math.rad(90), 0)
+	part(folder, { Name = "MedallionRim", Shape = "Cylinder", Size = Vector3.new(1.6, 23.6, 23.6), CFrame = medallionCF, Color = c(255, 190, 60), Material = Enum.Material.Neon })
+	local medallion = part(folder, { Name = "Medallion", Shape = "Cylinder", Size = Vector3.new(2.2, 22, 22), CFrame = medallionCF, Color = c(18, 18, 22), Material = Enum.Material.Slate })
+	local glowLight = Instance.new("PointLight")
+	glowLight.Color = c(255, 170, 60)
+	glowLight.Range = 24
+	glowLight.Brightness = 2
+	glowLight.Parent = medallion
+	local KANJI = { "刀", "果", "斬", "力", "速", "心", "道", "龍" } -- sword, fruit, slash, power, speed, heart, way, dragon
+	for _, face in { Enum.NormalId.Left, Enum.NormalId.Right } do
+		local gui = Instance.new("SurfaceGui")
+		gui.Face = face
+		gui.SizingMode = Enum.SurfaceGuiSizingMode.PixelsPerStud
+		gui.PixelsPerStud = 30
+		gui.LightInfluence = 0
+		gui.Brightness = 2.5
+		gui.Parent = medallion
+		local function glyph(text: string, size: number, x: number, y: number, color: Color3)
+			local label = Instance.new("TextLabel")
+			label.BackgroundTransparency = 1
+			label.AnchorPoint = Vector2.new(0.5, 0.5)
+			label.Position = UDim2.fromScale(x, y)
+			label.Size = UDim2.fromScale(size, size)
+			label.Font = Enum.Font.GothamBlack
+			label.TextScaled = true
+			label.Text = text
+			label.TextColor3 = color
+			label.Parent = gui
+			local stroke = Instance.new("UIStroke")
+			stroke.Color = c(255, 90, 20)
+			stroke.Thickness = 4
+			stroke.Transparency = 0.2
+			stroke.Parent = label
+		end
+		glyph("忍", 0.5, 0.5, 0.5, c(255, 225, 120)) -- shinobi / ninja
+		for k, kanji in KANJI do
+			local a = (k - 1) / #KANJI * math.pi * 2
+			glyph(kanji, 0.13, 0.5 + math.sin(a) * 0.38, 0.5 - math.cos(a) * 0.38, c(255, 200, 90))
+		end
+	end
+	-- the rock and the two crossed katanas
+	local rock = part(folder, { Name = "SwordRock", Size = Vector3.new(13, 7, 9), Position = Vector3.new(0, 4.6, -2.5), Color = c(35, 35, 40), Material = Enum.Material.Slate })
+	local rockMesh = Instance.new("SpecialMesh")
+	rockMesh.MeshType = Enum.MeshType.Sphere
+	rockMesh.Parent = rock
+	for _, data in { { 7, -1.6, -25, "Golden" }, { -7, -3.2, 25, "Diamond" } } do
+		local sword = ModelBuilder.Katana(data[4])
+		ModelBuilder.AnchorAll(sword)
+		sword:ScaleTo(4)
+		sword:PivotTo(CFrame.new(data[1], 24.5, data[2]) * CFrame.Angles(0, 0, math.pi + math.rad(data[3])))
+		for _, d in sword:GetDescendants() do
+			if d:IsA("BasePart") then
+				d.CanCollide = true
+				d.CanQuery = true
+			end
+		end
+		sword.Parent = folder
+	end
+	billboard(medallion, "🍉 FRUIT NINJA SIMULATOR 🍉", "Slice fruit • Train • Hatch creatures!", c(255, 220, 70), 15)
 
 	sign(folder, Vector3.new(0, 0, -30), Vector3.new(0, 0, 1), "⚔️ ARENAS ⬆", c(255, 120, 60))
 	sign(folder, Vector3.new(30, 0, 0), Vector3.new(-1, 0, 0), "🥋 DOJO ➡", c(230, 70, 70))
@@ -231,12 +287,10 @@ local function buildSpawn(world: Instance)
 	end
 	place(folder, JapaneseBuilder.Pagoda(18, 5), CFrame.new(-50, 0, -50) * CFrame.Angles(0, math.rad(45), 0))
 	place(folder, JapaneseBuilder.BellTower(12), CFrame.new(50, 0, -50) * CFrame.Angles(0, math.rad(-45), 0))
-	place(folder, JapaneseBuilder.KoiPond(18), CFrame.new(50, 0, 50))
-	place(folder, JapaneseBuilder.Bridge(6, 20), CFrame.new(50, 0, 50))
 	place(folder, JapaneseBuilder.ZenGarden(18), CFrame.new(-50, 0, 50))
 	for _, pos in { Vector3.new(-30, 0, -50), Vector3.new(-50, 0, -28), Vector3.new(30, 0, -52), Vector3.new(52, 0, -28),
 		Vector3.new(30, 0, 52), Vector3.new(-30, 0, 52), Vector3.new(-52, 0, 28), Vector3.new(52, 0, 26) } do
-		sakura(folder, pos, 1.3)
+		sakura(folder, pos, 2)
 	end
 
 	-- Stone roads
@@ -267,6 +321,8 @@ local function buildArena(world: Instance, arena: Arenas.ArenaDef)
 	for _, z in { trenchNear, trenchFar } do
 		part(folder, { Name = "TrenchEdge", Size = Vector3.new(110, 0.4, 0.6), Position = o + Vector3.new(0, 1.1, z), Color = arena.AccentColor, Material = Enum.Material.Neon, CanCollide = false })
 	end
+	-- carve the terrain out of the trench so fruit fly up from a real pit
+	workspace.Terrain:FillBlock(CFrame.new(o + Vector3.new(0, -4, (trenchNear + trenchFar) / 2)), Vector3.new(112, 8, trenchNear - trenchFar), Enum.Material.Air)
 	-- Trench walls so you can't see under the map
 	part(folder, { Name = "TrenchWallNear", Size = Vector3.new(110, 9, 0.5), Position = o + Vector3.new(0, -3.5, trenchNear - 0.25), Color = c(50, 40, 60) })
 	part(folder, { Name = "TrenchWallFar", Size = Vector3.new(110, 9, 0.5), Position = o + Vector3.new(0, -3.5, trenchFar + 0.25), Color = c(50, 40, 60) })
@@ -331,13 +387,13 @@ local function buildArena(world: Instance, arena: Arenas.ArenaDef)
 		local z = -20 + (i // 2) * 25
 		local position = o + Vector3.new(side * 64, 0, z)
 		if arena.Order == 1 then
-			sakura(folder, position, 1.5)
+			sakura(folder, position, 2.3)
 		elseif arena.Order == 2 then
 			place(folder, JapaneseBuilder.Bamboo(10, i), CFrame.new(position))
 		elseif isCosmic then
 			part(folder, { Name = "Crystal", Size = Vector3.new(3, 14, 3), CFrame = CFrame.new(position + Vector3.new(0, 7, 0)) * CFrame.Angles(0, math.rad(45), math.rad(10)), Color = arena.AccentColor, Material = Enum.Material.Neon })
 		else
-			tree(folder, position, arena.Order == 2 and c(40, 170, 80) or c(70, 180, 60), fruitColors[i % #fruitColors + 1], 1.2)
+			tree(folder, position, arena.Order == 2 and c(40, 170, 80) or c(70, 180, 60), fruitColors[i % #fruitColors + 1], 2)
 		end
 	end
 end
@@ -445,7 +501,7 @@ local function buildHatchery(world: Instance)
 	for i = 0, 9 do
 		local a = math.rad(i * 36 + 18)
 		if math.abs(math.cos(a)) < 0.95 or math.sin(a) > 0 then
-			sakura(folder, o + Vector3.new(math.cos(a) * 52, 0, math.sin(a) * 52 + 4), 1.3)
+			sakura(folder, o + Vector3.new(math.cos(a) * 52, 0, math.sin(a) * 52 + 4), 2)
 		end
 	end
 
@@ -506,9 +562,127 @@ local function buildVillage(world: Instance)
 		lantern(folder, Vector3.new(x - 14, 0, 131), 1)
 	end
 	for _, x in { -138, -194, -250 } do
-		sakura(folder, Vector3.new(x, 0, 165), 0.9)
-		sakura(folder, Vector3.new(x, 0, 235), 0.9)
+		sakura(folder, Vector3.new(x, 0, 165), 1.1)
+		sakura(folder, Vector3.new(x, 0, 235), 1.1)
 	end
+end
+
+local function buildLake(world: Instance)
+	local folder = Instance.new("Folder")
+	folder.Name = "Lake"
+	folder.Parent = world
+	local terrain = workspace.Terrain
+	local center = LAKE_CENTER
+	-- terrain water (real waves + reflections) on a sandy bed
+	terrain:FillCylinder(CFrame.new(center.X, -6.5, center.Z), 3, LAKE_RADIUS + 2, Enum.Material.Sand)
+	terrain:FillCylinder(CFrame.new(center.X, -2.5, center.Z), 5, LAKE_RADIUS, Enum.Material.Water)
+	-- stone shore
+	local stones = math.floor(LAKE_RADIUS * 2.2)
+	local rng = Random.new(5)
+	for i = 0, stones - 1 do
+		local a = i / stones * math.pi * 2
+		local r = LAKE_RADIUS + rng:NextNumber(-0.5, 1)
+		if math.abs(math.sin(a) * r) < 6.5 then
+			continue -- leave room for the bridge ends
+		end
+		part(folder, { Name = "ShoreStone", Shape = "Ball", Size = Vector3.one * rng:NextNumber(1.4, 2.6),
+			Position = Vector3.new(center.X + math.cos(a) * r, 0.1, center.Z + math.sin(a) * r), Color = c(130 + rng:NextInteger(0, 30), 130, 125), Material = Enum.Material.Slate })
+	end
+	-- lily pads and lotus flowers
+	for i = 1, 16 do
+		local a = rng:NextNumber(0, math.pi * 2)
+		local r = rng:NextNumber(5, LAKE_RADIUS - 3)
+		local pos = Vector3.new(center.X + math.cos(a) * r, 0.05, center.Z + math.sin(a) * r)
+		if math.abs(pos.Z - center.Z) > 7 then
+			local size = rng:NextNumber(2, 3.2)
+			part(folder, { Name = "LilyPad", Shape = "Cylinder", Size = Vector3.new(0.1, size, size), CFrame = CFrame.new(pos) * CFrame.Angles(0, 0, math.rad(90)), Color = c(70, 160, 70), CanCollide = false })
+			if i % 3 == 0 then
+				for p = 0, 4 do
+					part(folder, { Name = "Lotus", Shape = "Wedge", Size = Vector3.new(0.2, 0.9, 0.6), CanCollide = false,
+						CFrame = CFrame.new(pos + Vector3.new(0, 0.45, 0)) * CFrame.Angles(0, math.rad(p * 72), 0) * CFrame.new(0, 0, 0.3) * CFrame.Angles(math.rad(-25), 0, 0), Color = c(255, 160, 200) })
+				end
+				part(folder, { Name = "LotusCore", Shape = "Ball", Size = Vector3.one * 0.5, Position = pos + Vector3.new(0, 0.5, 0), Color = c(255, 220, 90), Material = Enum.Material.Neon, CanCollide = false })
+			end
+		end
+	end
+	-- big arched red bridge across the lake (east-west)
+	place(folder, JapaneseBuilder.Bridge(10, LAKE_RADIUS * 2 + 12), CFrame.new(center) * CFrame.Angles(0, math.rad(90), 0))
+	for _, sx in { -1, 1 } do
+		lantern(folder, center + Vector3.new(sx * (LAKE_RADIUS + 9), 0, 8), 1.2)
+		lantern(folder, center + Vector3.new(sx * (LAKE_RADIUS + 9), 0, -8), 1.2)
+	end
+	for _, a in { 0.6, 2.2, 3.9, 5.3 } do
+		sakura(folder, center + Vector3.new(math.cos(a) * (LAKE_RADIUS + 9), 0, math.sin(a) * (LAKE_RADIUS + 9)), 2.2)
+	end
+end
+
+local function buildDecorHouses(world: Instance)
+	local folder = Instance.new("Folder")
+	folder.Name = "DecorHouses"
+	folder.Parent = world
+	place(folder, JapaneseBuilder.Minka(24, 18), CFrame.new(-105, 0, -80) * CFrame.Angles(0, math.rad(25), 0))
+	place(folder, JapaneseBuilder.TeaHouse(18), CFrame.new(105, 0, -80) * CFrame.Angles(0, math.rad(-30), 0))
+	place(folder, JapaneseBuilder.Shrine(14), CFrame.new(-105, 0, 70) * CFrame.Angles(0, math.rad(200), 0))
+	for _, pos in { Vector3.new(-90, 0, -100), Vector3.new(-125, 0, -62), Vector3.new(90, 0, -100), Vector3.new(122, 0, -64), Vector3.new(-90, 0, 88), Vector3.new(-122, 0, 55) } do
+		sakura(folder, pos, 2.1)
+	end
+end
+
+-- Low wooden fence along a straight line, skipping gaps (distances along the line).
+local function fence(parent: Instance, from: Vector3, to: Vector3, gaps: { { number } }?)
+	local direction = to - from
+	local length = direction.Magnitude
+	local unit = direction.Unit
+	local spacing = 8
+	local wood = c(125, 85, 55)
+	local function inGap(d: number): boolean
+		for _, gap in gaps or {} do
+			if d >= gap[1] and d <= gap[2] then
+				return true
+			end
+		end
+		return false
+	end
+	local segmentStart: number? = nil
+	local function closeSegment(d: number)
+		if segmentStart and d - segmentStart > 1 then
+			local mid = from + unit * ((segmentStart + d) / 2)
+			for _, y in { 0.9, 1.7 } do
+				part(parent, { Name = "FenceRail", Size = Vector3.new(0.25, 0.25, d - segmentStart), CFrame = CFrame.lookAt(mid + Vector3.new(0, y, 0), mid + Vector3.new(0, y, 0) + unit), Color = wood, Material = Enum.Material.Wood })
+			end
+		end
+		segmentStart = nil
+	end
+	local d = 0
+	while d <= length do
+		if inGap(d) then
+			closeSegment(d - spacing)
+		else
+			if not segmentStart then
+				segmentStart = d
+			end
+			part(parent, { Name = "FencePost", Size = Vector3.new(0.5, 2.3, 0.5), Position = from + unit * d + Vector3.new(0, 1.15, 0), Color = wood:Lerp(c(0, 0, 0), 0.15), Material = Enum.Material.Wood })
+		end
+		d += spacing
+	end
+	closeSegment(math.min(d - spacing, length))
+end
+
+local function buildFences(world: Instance)
+	local folder = Instance.new("Folder")
+	folder.Name = "Fences"
+	folder.Parent = world
+	-- north road (x = 0, z -40 .. -134)
+	for _, sx in { -1, 1 } do
+		fence(folder, Vector3.new(sx * 9, 0, -40), Vector3.new(sx * 9, 0, -132))
+		-- east / west roads (z = 0)
+		fence(folder, Vector3.new(sx * 42, 0, 9), Vector3.new(sx * 132, 0, 9))
+		fence(folder, Vector3.new(sx * 42, 0, -9), Vector3.new(sx * 132, 0, -9))
+		-- south road (x = 0, z 42 .. 118)
+		fence(folder, Vector3.new(sx * 9, 0, 42), Vector3.new(sx * 9, 0, 114))
+	end
+	-- cross road in front of the arenas: gaps for the three arena entrances and the north road
+	fence(folder, Vector3.new(-230, 0, -133), Vector3.new(230, 0, -133), { { 44, 76 }, { 205, 255 }, { 384, 416 } })
 end
 
 local function buildScenery(world: Instance)
@@ -529,14 +703,17 @@ local function buildScenery(world: Instance)
 			or (math.abs(z + 142) < 12)
 			or (x < -70 and x > -315 and z > 105 and z < 268) -- ninja village
 			or (math.abs(z - 122) < 12 and x < 10) -- village road
+			or ((Vector2.new(x, z) - Vector2.new(LAKE_CENTER.X, LAKE_CENTER.Z)).Magnitude < LAKE_RADIUS + 12) -- lake
+			or (math.abs(x + 105) < 22 and math.abs(z + 80) < 22) or (math.abs(x - 105) < 20 and math.abs(z + 80) < 20)
+			or (math.abs(x + 105) < 18 and math.abs(z - 70) < 18) -- decorative houses
 		if not clear then
 			local kind = rng:NextInteger(1, 3)
 			if kind == 1 then
-				sakura(folder, Vector3.new(x, 0, z), rng:NextNumber(1.1, 1.6))
+				sakura(folder, Vector3.new(x, 0, z), rng:NextNumber(1.9, 2.7))
 			elseif kind == 2 then
 				place(folder, JapaneseBuilder.Bamboo(9, rng:NextInteger(1, 999)), CFrame.new(x, 0, z))
 			else
-				tree(folder, Vector3.new(x, 0, z), c(60 + rng:NextInteger(0, 40), 170, 60), fruitColors[rng:NextInteger(1, 4)], rng:NextNumber(0.9, 1.5))
+				tree(folder, Vector3.new(x, 0, z), c(60 + rng:NextInteger(0, 40), 170, 60), fruitColors[rng:NextInteger(1, 4)], rng:NextNumber(1.6, 2.4))
 			end
 		end
 	end
@@ -567,6 +744,18 @@ local function setupLighting()
 		cc.Contrast = 0.05
 		cc.Parent = Lighting
 	end
+	Lighting.EnvironmentDiffuseScale = 1
+	Lighting.EnvironmentSpecularScale = 1
+	Lighting.ShadowSoftness = 0.25
+	pcall(function()
+		Lighting.Technology = Enum.Technology.Future -- may only be settable in Studio; see docs
+	end)
+	if not Lighting:FindFirstChildOfClass("SunRaysEffect") then
+		local rays = Instance.new("SunRaysEffect")
+		rays.Intensity = 0.06
+		rays.Spread = 0.8
+		rays.Parent = Lighting
+	end
 	if not Lighting:FindFirstChildOfClass("BloomEffect") then
 		local bloom = Instance.new("BloomEffect")
 		bloom.Intensity = 0.4
@@ -595,7 +784,32 @@ function WorldBuilder.Init()
 
 	local world = Instance.new("Model")
 	world.Name = "FNS_World"
-	part(world, { Name = "Ground", Size = Vector3.new(700, 4, 700), Position = Vector3.new(0, -2, 0), Color = c(110, 200, 90), Material = Enum.Material.Grass })
+	-- Ground: real Terrain grass (with animated grass blades). A hidden safety floor sits below it.
+	local terrain = workspace.Terrain
+	terrain:FillBlock(CFrame.new(0, -4, 0), Vector3.new(700, 8, 700), Enum.Material.Grass)
+	terrain:SetMaterialColor(Enum.Material.Grass, c(96, 168, 72))
+	terrain:SetMaterialColor(Enum.Material.Cobblestone, c(150, 145, 138))
+	terrain:SetMaterialColor(Enum.Material.Sand, c(214, 196, 150))
+	terrain:SetMaterialColor(Enum.Material.Ground, c(120, 100, 75))
+	terrain.WaterColor = c(40, 120, 130)
+	terrain.WaterTransparency = 0.55
+	terrain.WaterReflectance = 0.6
+	terrain.WaterWaveSize = 0.12
+	terrain.WaterWaveSpeed = 8
+	local okDecoration = pcall(function()
+		terrain.Decoration = true
+	end)
+	if not okDecoration then
+		warn("[WorldBuilder] Enable grass blades manually: Workspace > Terrain > Properties > Decoration = true")
+	end
+	if not terrain:FindFirstChildOfClass("Clouds") then
+		local clouds = Instance.new("Clouds")
+		clouds.Cover = 0.55
+		clouds.Density = 0.6
+		clouds.Parent = terrain
+	end
+	local safety = part(world, { Name = "SafetyFloor", Size = Vector3.new(700, 2, 700), Position = Vector3.new(0, -9, 0), Color = c(96, 168, 72), Material = Enum.Material.Grass })
+	safety.Transparency = 1
 
 	buildSpawn(world)
 	for _, arena in Arenas.List do
@@ -605,7 +819,30 @@ function WorldBuilder.Init()
 	buildShops(world)
 	buildHatchery(world)
 	buildVillage(world)
+	buildLake(world)
+	buildDecorHouses(world)
+	buildFences(world)
 	buildScenery(world)
+	-- Under flat floors (plazas, arenas, dojo, shops...) use bare terrain so grass blades can't poke through
+	for _, d in world:GetDescendants() do
+		if d:IsA("BasePart") and d.Name ~= "Root" and d.Transparency < 1 and d.Position.Y > -1 and d.Position.Y < 2.5 then
+			local isDisc = d:IsA("Part") and d.Shape == Enum.PartType.Cylinder
+			local width = isDisc and d.Size.Y or d.Size.X
+			local depth = isDisc and d.Size.Z or d.Size.Z
+			local thin = isDisc and d.Size.X <= 2 or d.Size.Y <= 2
+			if thin and width * depth > 100 then
+				local yaw = select(2, d.CFrame:ToOrientation())
+				workspace.Terrain:FillBlock(CFrame.new(d.Position.X, -2, d.Position.Z) * CFrame.Angles(0, yaw, 0), Vector3.new(width, 4, depth), Enum.Material.Ground)
+			end
+		end
+	end
+	-- Paint every road part into cobblestone terrain (looks like real paving and hides grass blades)
+	for _, d in world:GetDescendants() do
+		if d:IsA("BasePart") and (d.Name:sub(1, 4) == "Road" or d.Name == "VillageRoad" or d.Name == "VillageLane" or d.Name == "VillageLinkA") then
+			workspace.Terrain:FillBlock(CFrame.new(d.Position.X, -2, d.Position.Z), Vector3.new(d.Size.X, 4, d.Size.Z), Enum.Material.Cobblestone)
+			d:Destroy()
+		end
+	end
 	world.Parent = workspace
 
 	-- Location markers (handy for future features / debugging)
