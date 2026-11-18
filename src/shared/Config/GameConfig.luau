@@ -4,6 +4,9 @@
 
 local GameConfig = {}
 
+-- Shown on screen (bottom-left) and in the Output window, so you can always see which build you're running.
+GameConfig.Version = "2.0 - Japanese Village"
+
 GameConfig.DataStoreName = "FruitNinjaSimulator_PlayerData_v1"
 GameConfig.DataVersion = 1
 GameConfig.AutosaveInterval = 90 -- seconds

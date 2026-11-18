@@ -43,7 +43,7 @@ for _, name in order do
 	end
 end
 
-print("[Fruit Ninja Simulator] Server ready.")
+print("[Fruit Ninja Simulator] Server ready. Version " .. require(ReplicatedStorage.Shared.Config.GameConfig).Version)
 
 -- Config / formula sanity checks (Studio only)
 if game:GetService("RunService"):IsStudio() then

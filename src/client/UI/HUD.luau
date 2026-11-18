@@ -47,6 +47,12 @@ local MENU = {
 	{ Window = "Trade", Emoji = "🤝", Label = "Trade", Color = Color3.fromRGB(90, 200, 120) },
 }
 
+local function buildVersionLabel(root: ScreenGui)
+	local GameConfig = require(Shared.Config.GameConfig)
+	UIKit.Label({ Name = "Version", Text = "v" .. GameConfig.Version, Font = Theme.BodyFont, Color = C.SubText, AnchorPoint = Vector2.new(0, 1),
+		Position = UDim2.new(0, 8, 1, -4), Size = UDim2.fromOffset(260, 18), AlignX = Enum.TextXAlignment.Left, Parent = root, MaxTextSize = 14 })
+end
+
 local function build(root: ScreenGui)
 	-- Everything on the left lives in one column that is scaled as a unit (anchored top-left).
 	container = new("Frame", { Name = "HUD", BackgroundTransparency = 1, Size = UDim2.fromOffset(320, 460), Parent = root })
@@ -148,6 +154,7 @@ end
 
 function HUD.Init()
 	build(UIKit.Root :: ScreenGui)
+	buildVersionLabel(UIKit.Root :: ScreenGui)
 	coinValue = Instance.new("NumberValue")
 	coinValue.Changed:Connect(function(value)
 		local rounded = math.floor(value + 0.5)
