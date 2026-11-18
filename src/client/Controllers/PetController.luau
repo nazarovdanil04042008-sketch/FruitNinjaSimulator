@@ -16,6 +16,18 @@ local entries: { [Player]: Entry } = {}
 local folder: Folder
 local localHidden = false
 local MAX_DISTANCE = 220
+local rainbowParts: { BasePart } = {}
+local rainbowDirty = true
+
+local function collectRainbow()
+	table.clear(rainbowParts)
+	for _, d in folder:GetDescendants() do
+		if d:IsA("BasePart") and d:GetAttribute("Rainbow") then
+			table.insert(rainbowParts, d)
+		end
+	end
+	rainbowDirty = false
+end
 
 local function clearModels(entry: Entry)
 	for _, model in entry.Models do
@@ -36,8 +48,10 @@ local function rebuild(player: Player)
 	entry.Signature = signature
 	clearModels(entry)
 	table.clear(entry.Feet)
-	for id in string.gmatch(signature, "[^,]+") do
-		local model = ModelBuilder.Creature(id)
+	for item in string.gmatch(signature, "[^,]+") do
+		-- "Id:tier:shiny" (older servers sent just "Id")
+		local id, tier, shiny = string.match(item, "^([^:]+):?(%d*):?(%d*)$")
+		local model = ModelBuilder.Creature(id or item, tonumber(tier) or 0, shiny == "1")
 		ModelBuilder.AnchorRoot(model)
 		model:ScaleTo(0.8)
 		-- distance from the root down to the soles, so pets walk on the ground
@@ -47,6 +61,7 @@ local function rebuild(player: Player)
 		model.Parent = folder
 		table.insert(entry.Models, model)
 	end
+	rainbowDirty = true
 end
 
 local function track(player: Player)
@@ -131,6 +146,15 @@ local function update(dt: number)
 	end
 	if #roots > 0 then
 		workspace:BulkMoveTo(roots, cframes, Enum.BulkMoveMode.FireCFrameChanged)
+	end
+	-- Rainbow-tier pets slowly cycle through the colours
+	if rainbowDirty then
+		collectRainbow()
+	end
+	for i, part in rainbowParts do
+		if part.Parent then
+			part.Color = Color3.fromHSV((t * 0.2 + i * 0.03) % 1, 0.65, 1)
+		end
 	end
 end
 

@@ -52,6 +52,8 @@ local function give(player: Player, profile: any, reward: any): string
 	return table.concat(parts, ", ")
 end
 
+RewardService.Give = give
+
 local function niceTarget(value: number): number
 	if value >= 1000 then
 		return math.floor(value / 500 + 0.5) * 500
@@ -159,6 +161,25 @@ function RewardService.Init()
 		end
 		quest.Claimed = true
 		return true, "Quest reward: " .. give(player, profile, { Coins = def.Coins, Xp = def.Xp, Egg = def.Egg })
+	end)
+
+	-- Tutorial: the client shows the steps; the server checks they're really done before paying out.
+	ActionService.Register("CompleteTutorial", function(player, profile, skip: any)
+		if profile.TutorialDone then
+			return false, "Tutorial already completed."
+		end
+		if skip == true then
+			profile.TutorialDone = true
+			DataService.Replicate(player)
+			return true, "Tutorial skipped."
+		end
+		local t = profile.Totals
+		local done = t.FruitsSliced >= 10 and profile.OwnedKatanas.Iron == true and t.TrainingsDone >= 1 and t.EggsHatched >= 1 and #profile.Buildings >= 1
+		if not done then
+			return false, "Finish all tutorial steps first!"
+		end
+		profile.TutorialDone = true
+		return true, "🎓 Tutorial complete! " .. give(player, profile, { Coins = 800, Egg = "Spotted" })
 	end)
 
 	QuestBus.Progress:Connect(onProgress)

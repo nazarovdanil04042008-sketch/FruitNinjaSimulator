@@ -92,6 +92,43 @@ for _, q in LiveOps.Quests do
 	LiveOps.QuestById[q.Id] = q
 end
 
+------------------------------------------------------------------------------------------------
+-- Seasons (UTC dates). During a season: its egg flies through every arena, the world gets
+-- seasonal visuals (snow / spooky night / extra petals) and a banner shows on screen.
+-- GameConfig.ForceSeason can force one for testing in Studio.
+------------------------------------------------------------------------------------------------
+export type SeasonDef = { Id: string, DisplayName: string, Emoji: string, Color: Color3, StartMonth: number, StartDay: number, EndMonth: number, EndDay: number, EggFruit: string }
+LiveOps.Seasons = {
+	{ Id = "Spring", DisplayName = "Sakura Festival", Emoji = "🌸", Color = c(255, 170, 210), StartMonth = 3, StartDay = 20, EndMonth = 4, EndDay = 30, EggFruit = "SpringEgg" },
+	{ Id = "Halloween", DisplayName = "Spooky Season", Emoji = "🎃", Color = c(255, 140, 30), StartMonth = 10, StartDay = 15, EndMonth = 11, EndDay = 5, EggFruit = "HalloweenEgg" },
+	{ Id = "Winter", DisplayName = "Winter Festival", Emoji = "❄️", Color = c(170, 220, 255), StartMonth = 12, StartDay = 10, EndMonth = 1, EndDay = 10, EggFruit = "WinterEgg" },
+} :: { SeasonDef }
+LiveOps.SeasonEggChance = 0.02 -- extra chance per launched object during a season
+
+function LiveOps.CurrentSeason(unix: number, forced: string?): SeasonDef?
+	if forced and forced ~= "" then
+		for _, s in LiveOps.Seasons do
+			if s.Id == forced then
+				return s
+			end
+		end
+	end
+	local date = os.date("!*t", unix)
+	local key = date.month * 100 + date.day
+	for _, s in LiveOps.Seasons do
+		local startKey = s.StartMonth * 100 + s.StartDay
+		local endKey = s.EndMonth * 100 + s.EndDay
+		if startKey <= endKey then
+			if key >= startKey and key <= endKey then
+				return s
+			end
+		elseif key >= startKey or key <= endKey then -- wraps over new year
+			return s
+		end
+	end
+	return nil
+end
+
 -- Coins in rewards scale gently with level so they stay meaningful.
 function LiveOps.ScaleCoins(base: number, level: number): number
 	return math.floor(base * (1 + (level - 1) * 0.25))

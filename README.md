@@ -19,6 +19,11 @@ A complete, playable Roblox simulator set in a Japanese ninja world: **Fruit-Nin
 | 🎉 Events | Two 5-minute events every half hour: Double Coins, Golden Rain, Egg Frenzy, Lucky Hatch, Fruit Storm, Double XP |
 | 🎁 Rewards | 7-day daily login streak, playtime rewards (5–60 min), 3 daily quests, personal 2x Coins / 2x XP boosts |
 | 🌸 Living world | Terrain grass, interactive grass blades, lake with koi, day/night cycle, cranes, falling petals, fireflies, lanterns |
+| ✨ Creature variants | Every creature sheds particles (more for rarer ones); 1% Shiny; merge 5 → Golden (x3), 5 Golden → Rainbow (x10, colour-cycling) |
+| 🔁 Rebirth | Reset coins/level/stats for a permanent +50% coins / +25% XP per rebirth; Phoenix Trail (R1) and Phoenix Katana (R3) |
+| 💎 Store & codes | 5 game passes (2x Coins, +2 slots, Fast Hatch, Lucky, VIP), 5 developer products, redeemable codes |
+| 🏆 Leaderboards & badges | Global top-10 boards (coins, rebirths, boss damage) on the plaza; Roblox badges for milestones |
+| 🧭 Tutorial & seasons | Guided first steps with a glowing guide line; Sakura / Halloween / Winter seasons with exclusive eggs and creatures; background music |
 | 🎨 Custom models | Drop your own 3D models into `assets/` and they replace the procedural creatures, buildings or katanas (see `docs/ASSETS.md`) |
 | 🖥️ UI | HUD (level, XP, coins, speed, katana, belt, trail), 9 menus, purchase confirmations, toasts, stat popups, level-up banners. Scales for phones, tablets and PC |
 | 💾 Saving | DataStore with session locking, `UpdateAsync`, retries, autosave, save on leave / shutdown, Studio offline fallback |

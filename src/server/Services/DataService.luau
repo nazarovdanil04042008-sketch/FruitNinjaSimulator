@@ -70,12 +70,17 @@ local function newTemplate()
 		Eggs = {}, -- { { Uid, EggId, HatchAt }, ... }
 		BuildInventory = {}, -- buildingId -> count bought but not placed
 		Buildings = {}, -- placed on the plot: { { Uid, Id, X, Z, R }, ... }
+		Rebirths = 0,
+		Passes = {}, -- passId -> true (re-verified with Roblox on every join)
+		RedeemedCodes = {},
+		Receipts = {}, -- recent developer-product receipt ids (prevents double grants)
+		TutorialDone = false,
 		DailyStreak = 0,
 		LastDailyDay = -1,
 		Quests = { Day = -1, List = {} },
 		Boosts = { Coins = 0, Xp = 0 },
 		NextUid = 1,
-		Totals = { FruitsSliced = 0, EggsHatched = 0, BestCombo = 0, CoinsEarned = 0, BombsHit = 0, TrainingsDone = 0 },
+		Totals = { FruitsSliced = 0, EggsHatched = 0, BestCombo = 0, CoinsEarned = 0, BombsHit = 0, TrainingsDone = 0, BossDamage = 0, BossesDefeated = 0 },
 		LastJoin = 0,
 	}
 end
@@ -152,11 +157,18 @@ local function sanitize(profile: any)
 	for uid, entry in profile.Creatures do
 		if type(entry) ~= "table" or not Creatures.ById[entry.Id] then
 			profile.Creatures[uid] = nil
+		else
+			entry.Tier = math.floor(sanitizeNumber(entry.Tier, 0, 0, Creatures.MaxTier))
+			entry.Shiny = entry.Shiny == true
 		end
+	end
+	profile.Rebirths = math.floor(sanitizeNumber(profile.Rebirths, 0, 0, 1000))
+	if #profile.Receipts > 50 then
+		profile.Receipts = { table.unpack(profile.Receipts, #profile.Receipts - 49) }
 	end
 	local seen = {}
 	local equipped = {}
-	local slots = Formulas.PetSlots(profile.Level)
+	local slots = Formulas.PetSlots(profile.Level, profile)
 	for _, uid in profile.EquippedCreatures do
 		if profile.Creatures[uid] and not seen[uid] and #equipped < slots then
 			seen[uid] = true

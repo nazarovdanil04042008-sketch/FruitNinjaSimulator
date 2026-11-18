@@ -41,14 +41,38 @@ function Formulas.UpgradeCost(baseCost: number, growth: number, currentLevel: nu
 	return math.floor(baseCost * growth ^ currentLevel)
 end
 
-function Formulas.PetSlots(level: number): number
+function Formulas.PetSlots(level: number, profile: any?): number
 	local slots = 1
 	for _, entry in GameConfig.PetSlotsByLevel do
 		if level >= entry.level then
 			slots = entry.slots
 		end
 	end
+	if profile and profile.Passes and profile.Passes.ExtraSlots then
+		slots += 2
+	end
 	return slots
+end
+
+-- Rebirth requirements for the NEXT rebirth.
+function Formulas.RebirthCost(rebirths: number): number
+	return math.floor(GameConfig.RebirthBaseCost * GameConfig.RebirthCostGrowth ^ rebirths)
+end
+
+function Formulas.RebirthLevel(rebirths: number): number
+	return GameConfig.RebirthLevel + rebirths * 5
+end
+
+-- Luck for egg hatching from passes / potions (events are applied on the server on top of this).
+function Formulas.Luck(profile: any): number
+	local luck = 1
+	if profile.Passes and profile.Passes.Lucky then
+		luck *= 1.5
+	end
+	if profile.Boosts and (profile.Boosts.Luck or 0) > os.time() then
+		luck *= 3
+	end
+	return luck
 end
 
 -- Sum of bonuses from equipped creatures (missing / invalid uids are ignored).
@@ -58,7 +82,7 @@ function Formulas.CreatureBonus(profile: any): { Coins: number, Xp: number, Spee
 	for _, uid in profile.EquippedCreatures or {} do
 		local entry = creatures[uid]
 		if entry then
-			local bonus = Creatures.GetBonus(entry.Id)
+			local bonus = Creatures.GetEntryBonus(entry)
 			total.Coins += bonus.Coins
 			total.Xp += bonus.Xp
 			total.Speed += bonus.Speed
@@ -114,6 +138,11 @@ function Formulas.Compute(profile: any): Derived
 	local now = os.time()
 	local coinBoost = (boosts.Coins or 0) > now and 2 or 1
 	local xpBoost = (boosts.Xp or 0) > now and 2 or 1
+	-- rebirths + game passes
+	local passes = profile.Passes or {}
+	local rebirths = profile.Rebirths or 0
+	coinBoost *= (1 + rebirths * GameConfig.RebirthCoinBonus) * (passes.DoubleCoins and 2 or 1) * (passes.VIP and 1.25 or 1)
+	xpBoost *= (1 + rebirths * GameConfig.RebirthXpBonus) * (passes.VIP and 1.25 or 1)
 
 	return {
 		CoinMultiplier = coinBoost * (1 + strength * 0.04) * katana.CoinMultiplier * (1 + creature.Coins + building.Coins),
@@ -126,7 +155,7 @@ function Formulas.Compute(profile: any): Derived
 		SliceRate = math.min(8 + agility * 0.2, 30) * katana.SliceRate,
 		HitRadius = math.min(16 + agility * 0.25, 45) * katana.HitRadius,
 		ComboWindow = math.min(0.45 + agility * 0.003, 0.8),
-		PetSlots = Formulas.PetSlots(profile.Level or 1),
+		PetSlots = Formulas.PetSlots(profile.Level or 1, profile),
 		CreatureBonus = creature,
 		BuildingBonus = building,
 	}

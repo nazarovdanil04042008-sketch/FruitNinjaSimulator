@@ -46,6 +46,9 @@ local list: { FruitDef } = {
 	{ Id = "SpottedEgg", DisplayName = "Spotted Egg", Kind = "Egg", EggId = "Spotted", Coins = 0, Xp = 5, Radius = 1.35, Color = Color3.fromRGB(140, 220, 255), Color2 = Color3.fromRGB(40, 120, 230), Juice = Color3.fromRGB(200, 240, 255), Shape = "Egg" },
 	{ Id = "JungleEgg", DisplayName = "Jungle Egg", Kind = "Egg", EggId = "Jungle", Coins = 0, Xp = 8, Radius = 1.4, Color = Color3.fromRGB(90, 200, 80), Color2 = Color3.fromRGB(255, 220, 60), Juice = Color3.fromRGB(200, 255, 180), Shape = "Egg" },
 	{ Id = "CrystalEgg", DisplayName = "Crystal Egg", Kind = "Egg", EggId = "Crystal", Coins = 0, Xp = 12, Radius = 1.4, Color = Color3.fromRGB(150, 245, 255), Color2 = Color3.fromRGB(255, 255, 255), Juice = Color3.fromRGB(220, 255, 255), Shape = "Egg", Material = Enum.Material.Glass },
+	{ Id = "SpringEgg", DisplayName = "Sakura Egg", Kind = "Egg", EggId = "Spring", Coins = 0, Xp = 10, Radius = 1.4, Color = Color3.fromRGB(255, 190, 215), Color2 = Color3.fromRGB(255, 255, 255), Juice = Color3.fromRGB(255, 200, 220), Shape = "Egg" },
+	{ Id = "HalloweenEgg", DisplayName = "Spooky Egg", Kind = "Egg", EggId = "Halloween", Coins = 0, Xp = 10, Radius = 1.4, Color = Color3.fromRGB(255, 130, 20), Color2 = Color3.fromRGB(60, 20, 80), Juice = Color3.fromRGB(255, 160, 40), Shape = "Egg" },
+	{ Id = "WinterEgg", DisplayName = "Frost Egg", Kind = "Egg", EggId = "Winter", Coins = 0, Xp = 10, Radius = 1.4, Color = Color3.fromRGB(210, 240, 255), Color2 = Color3.fromRGB(230, 40, 60), Juice = Color3.fromRGB(230, 250, 255), Shape = "Egg", Material = Enum.Material.Glass },
 	{ Id = "CosmicEgg", DisplayName = "Cosmic Egg", Kind = "Egg", EggId = "Cosmic", Coins = 0, Xp = 20, Radius = 1.5, Color = Color3.fromRGB(110, 50, 230), Color2 = Color3.fromRGB(60, 230, 255), Juice = Color3.fromRGB(200, 170, 255), Shape = "Egg", Material = Enum.Material.Neon },
 }
 

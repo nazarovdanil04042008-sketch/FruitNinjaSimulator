@@ -9,6 +9,8 @@ export type EggDef = {
 	HatchTime: number,
 	FruitId: string, -- the arena object that represents this egg
 	Weights: { [string]: number }, -- rarity name -> weight
+	Pool: { { Id: string, Weight: number } }?, -- seasonal eggs: explicit creature pool instead of rarity weights
+	Season: string?,
 }
 
 local list: { EggDef } = {
@@ -33,6 +35,16 @@ local list: { EggDef } = {
 		Weights = { Epic = 30, Legendary = 30, Diamond = 18, Gold = 12, Mythical = 6.5, Cosmic = 3, Secret = 0.5 },
 	},
 }
+
+-- Seasonal eggs (only fly through the arenas while their season is running)
+for _, data in { { "Spring", "Sakura Egg", "SpringEgg", "SakurinaBlossomelli", "HanamiDragonino" }, { "Halloween", "Spooky Egg", "HalloweenEgg", "PumpkinoSpookini", "GhostberryBooini" },
+	{ "Winter", "Frost Egg", "WinterEgg", "SnowmelonFrostini", "CandyCaneKatanino" } } do
+	table.insert(list, {
+		Id = data[1], DisplayName = data[2], HatchTime = 120, FruitId = data[3], Season = data[1],
+		Weights = { Epic = 92, Mythical = 8 },
+		Pool = { { Id = data[4], Weight = 92 }, { Id = data[5], Weight = 8 } },
+	})
+end
 
 local Eggs = {
 	List = list,

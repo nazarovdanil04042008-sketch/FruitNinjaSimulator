@@ -26,6 +26,7 @@ local PlotGrid = require(Shared.Util.PlotGrid)
 local ModelBuilder = require(Shared.Util.ModelBuilder)
 local JapaneseBuilder = require(Shared.Util.JapaneseBuilder)
 local LiveOps = require(Config.LiveOps)
+local Monetization = require(Config.Monetization)
 
 local SelfTest = {}
 
@@ -105,7 +106,14 @@ function SelfTest.Run()
 	end
 
 	-- Shops: prices / bonuses increase with order
-	local function ascending(name: string, list: { any }, priceKey: string, bonusKey: string)
+	local function ascending(name: string, all: { any }, priceKey: string, bonusKey: string)
+		-- exclusive rewards (rebirth / game pass) are free and skipped here
+		local list = {}
+		for _, item in all do
+			if not item.RequiredRebirths and not item.RequiredPass then
+				table.insert(list, item)
+			end
+		end
 		for i = 2, #list do
 			check(name .. " price ascending " .. list[i].Id, list[i][priceKey] > list[i - 1][priceKey])
 			check(name .. " bonus ascending " .. list[i].Id, list[i][bonusKey] >= list[i - 1][bonusKey])
@@ -236,6 +244,29 @@ function SelfTest.Run()
 		for kind in event.Multipliers do
 			check("event multiplier kind " .. event.Id, table.find({ "Coins", "Xp", "EggChance", "GoldenChance", "Luck", "SpawnRate" }, kind) ~= nil, kind)
 		end
+	end
+
+	-- Monetization / codes / seasons / variants
+	for code, reward in Monetization.Codes do
+		check("code upper-case " .. code, code == code:upper())
+		check("code egg " .. code, reward.Egg == nil or Eggs.Get(reward.Egg) ~= nil)
+	end
+	for _, season in LiveOps.Seasons do
+		local fruit = Fruits.Get(season.EggFruit)
+		check("season egg " .. season.Id, fruit ~= nil and fruit.Kind == "Egg" and Eggs.Get(fruit.EggId :: string) ~= nil)
+		check("season forced " .. season.Id, LiveOps.CurrentSeason(0, season.Id) == season)
+	end
+	for _, egg in Eggs.List do
+		for _, entry in egg.Pool or {} do
+			check("egg pool creature " .. entry.Id, Creatures.Get(entry.Id) ~= nil)
+		end
+	end
+	check("tier multipliers", Creatures.EntryMultiplier({ Id = "AppleCrunchito", Tier = 2, Shiny = true }) == 15)
+	check("rebirth cost grows", Formulas.RebirthCost(1) > Formulas.RebirthCost(0))
+	for _, def in Creatures.List do
+		tryBuild("creature variant " .. def.Id, function()
+			return ModelBuilder.Creature(def.Id, 2, true)
+		end)
 	end
 
 	-- Formatting

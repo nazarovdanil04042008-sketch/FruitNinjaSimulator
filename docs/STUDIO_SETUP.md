@@ -35,6 +35,7 @@ ReplicatedStorage
     │   ├── GameConfig             (ModuleScript)
     │   ├── Katanas                (ModuleScript)
     │   ├── LiveOps                (ModuleScript)
+    │   ├── Monetization           (ModuleScript)
     │   ├── Locations              (ModuleScript)
     │   ├── Rarities               (ModuleScript)
     │   ├── Sounds                 (ModuleScript)
@@ -60,6 +61,7 @@ ServerScriptService
 └── Server                         (Folder)
     ├── Main                       (Script)        <- src/server/Main.server.luau
     ├── Services                   (Folder)
+    │   ├── AchievementService     (ModuleScript)
     │   ├── ActionService          (ModuleScript)
     │   ├── BossService            (ModuleScript)
     │   ├── BuildingService        (ModuleScript)
@@ -67,8 +69,11 @@ ServerScriptService
     │   ├── EggService             (ModuleScript)
     │   ├── EquipmentService       (ModuleScript)
     │   ├── EventService           (ModuleScript)
+    │   ├── LeaderboardService     (ModuleScript)
+    │   ├── MonetizationService    (ModuleScript)
     │   ├── ProgressionService     (ModuleScript)
     │   ├── QuestBus               (ModuleScript)
+    │   ├── RebirthService         (ModuleScript)
     │   ├── RewardService          (ModuleScript)
     │   ├── ShopService            (ModuleScript)
     │   ├── SlicingService         (ModuleScript)
@@ -89,10 +94,12 @@ StarterPlayer
         │   ├── FruitVisuals       (ModuleScript)
         │   ├── GrassController    (ModuleScript)
         │   ├── HatchReveal        (ModuleScript)
+        │   ├── MusicController    (ModuleScript)
         │   ├── PetController      (ModuleScript)
         │   ├── SlicingController  (ModuleScript)
         │   ├── State              (ModuleScript)
         │   ├── TrainingGames      (ModuleScript)
+        │   ├── TutorialController (ModuleScript)
         │   └── WorldController    (ModuleScript)
         └── UI                     (Folder)
             ├── Effects            (ModuleScript)
@@ -105,8 +112,10 @@ StarterPlayer
                 ├── EggsWindow     (ModuleScript)
                 ├── IndexWindow    (ModuleScript)
                 ├── PetsWindow     (ModuleScript)
+                ├── RebirthWindow  (ModuleScript)
                 ├── RewardsWindow  (ModuleScript)
                 ├── ShopWindows    (ModuleScript)
+                ├── StoreWindow    (ModuleScript)
                 ├── TeleportWindow (ModuleScript)
                 ├── TradeWindow    (ModuleScript)
                 ├── TrainingWindow (ModuleScript)
@@ -127,6 +136,14 @@ These are all created by code at runtime, so the scripts never depend on objects
 | Pets, arena fruit | `PetController`, `FruitVisuals` (client only) | `Workspace.FNS_Pets`, `Workspace.FNS_LocalFruits` |
 
 **Customising the map by hand:** press Play, select `Workspace.FNS_World`, copy it, stop the game, paste it into Workspace and edit it. `WorldBuilder` skips generation when `FNS_World` already exists. Keep the ProximityPrompts' attributes (`Action`, `Arena`, `Activity`, `Window`) and the `FNS_Gate` parts.
+
+## 4a. Robux store, badges, music (optional, after publishing)
+All in `src/shared/Config/` - IDs are 0 / "" by default, which simply hides or skips the feature:
+- **Monetization.luau → Passes / Products:** create them at create.roblox.com → your game → Monetization, paste each ID. Purchases made in Studio are free test purchases.
+- **Monetization.luau → Badges:** create badges at create.roblox.com → your game → Badges, paste the IDs.
+- **Monetization.luau → Codes:** add / remove your own codes (UPPER-CASE).
+- **Sounds.luau → MusicDay / MusicNight / MusicBoss:** paste `rbxassetid://...` of music from Creator Store → Audio.
+- **GameConfig.luau → ForceSeason:** `"Winter"`, `"Halloween"` or `"Spring"` to preview a season in Studio.
 
 ## 4b. Best graphics (optional, 30 seconds)
 Some settings can only be changed in Studio, not by scripts:

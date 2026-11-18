@@ -16,6 +16,8 @@ export type TrailDef = {
 	Particles: boolean, -- adds a light-weight ParticleEmitter (rate kept low)
 	ParticleTexture: string?,
 	ParticleRate: number?,
+	RequiredRebirths: number?, -- exclusive: free, unlocked by rebirthing
+	RequiredPass: string?, -- exclusive: free with this game pass
 }
 
 local function c(r: number, g: number, b: number): Color3
@@ -37,6 +39,11 @@ local list: { TrailDef } = {
 	{ Id = "Cosmic", DisplayName = "Cosmic Trail", Order = 9, Price = 2400000, RequiredLevel = 36, SpeedMultiplier = 1.26, Colors = { c(255, 120, 255), c(120, 80, 255), c(40, 230, 255) }, Lifetime = 0.8, Width = 2.2, LightEmission = 1, Particles = true, ParticleTexture = SPARKLE, ParticleRate = 16 },
 	{ Id = "Galaxy", DisplayName = "Galaxy Trail", Order = 10, Price = 6400000, RequiredLevel = 44, SpeedMultiplier = 1.32, Colors = { c(20, 0, 60), c(120, 40, 255), c(255, 100, 220), c(255, 255, 255) }, Lifetime = 0.9, Width = 2.6, LightEmission = 1, Particles = true, ParticleTexture = SPARKLE, ParticleRate = 18 },
 }
+
+table.insert(list, { Id = "Phoenix", DisplayName = "Phoenix Trail", Order = 11, Price = 0, RequiredLevel = 1, RequiredRebirths = 1, SpeedMultiplier = 1.3,
+	Colors = { c(255, 240, 120), c(255, 120, 30), c(200, 20, 20) }, Lifetime = 0.8, Width = 2.6, LightEmission = 1, Particles = true, ParticleTexture = FIRE, ParticleRate = 18 })
+table.insert(list, { Id = "VIP", DisplayName = "VIP Gold Trail", Order = 12, Price = 0, RequiredLevel = 1, RequiredPass = "VIP", SpeedMultiplier = 1.25,
+	Colors = { c(255, 255, 200), c(255, 210, 60), c(255, 160, 0) }, Lifetime = 0.7, Width = 2.4, LightEmission = 1, Particles = true, ParticleTexture = SPARKLE, ParticleRate = 16 })
 
 local Trails = {
 	List = list,

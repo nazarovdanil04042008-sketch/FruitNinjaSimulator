@@ -23,6 +23,7 @@ export type CreatureDef = {
 		Accessories: { string }?,
 	},
 	Bonus: BonusSet,
+	Season: string?, -- seasonal creatures only come from that season's egg
 }
 
 local function c(r: number, g: number, b: number): Color3
@@ -82,6 +83,20 @@ local list: { CreatureDef } = {
 		Body = { Shape = "Tall", Color = c(120, 120, 130), Color2 = c(255, 215, 50), Size = 2.3, Accessories = { "Crown", "Cape" } }, Bonus = { Coins = 0.08, Speed = 0.005 } },
 }
 
+-- Seasonal exclusives (only from Spring / Halloween / Winter eggs during the season)
+table.insert(list, { Id = "SakurinaBlossomelli", DisplayName = "Sakurina Blossomelli", Rarity = "Epic", Emoji = "🌸", Quote = "petals everywhere. EVERYWHERE.", Season = "Spring",
+	Body = { Shape = "Ball", Color = c(255, 180, 210), Color2 = c(255, 120, 170), Size = 1.7, Accessories = { "Bow", "Headband" } }, Bonus = { Coins = 0.06, Training = 0.03 } })
+table.insert(list, { Id = "HanamiDragonino", DisplayName = "Hanami Dragonino", Rarity = "Mythical", Emoji = "🐲", Quote = "i only come out when the trees are pink.", Season = "Spring",
+	Body = { Shape = "Spiky", Color = c(255, 150, 200), Color2 = c(120, 220, 140), Size = 2, Accessories = { "Horns", "Cape" } }, Bonus = { Coins = 0.07, Speed = 0.004 } })
+table.insert(list, { Id = "PumpkinoSpookini", DisplayName = "Pumpkino Spookini", Rarity = "Epic", Emoji = "🎃", Quote = "boo. (but make it fruity)", Season = "Halloween",
+	Body = { Shape = "Ball", Color = c(255, 130, 20), Color2 = c(60, 130, 40), Size = 1.9, Accessories = { "Horns" } }, Bonus = { Coins = 0.05, Xp = 0.04 } })
+table.insert(list, { Id = "GhostberryBooini", DisplayName = "Ghostberry Booini", Rarity = "Mythical", Emoji = "👻", Quote = "you can't slice what you can't see~", Season = "Halloween",
+	Body = { Shape = "Tall", Color = c(235, 235, 255), Color2 = c(150, 90, 255), Size = 1.9, Accessories = { "Halo", "Cape" } }, Bonus = { Xp = 0.06, Training = 0.04 } })
+table.insert(list, { Id = "SnowmelonFrostini", DisplayName = "Snowmelon Frostini", Rarity = "Epic", Emoji = "⛄", Quote = "brrr... a melon in winter?!", Season = "Winter",
+	Body = { Shape = "Ball", Color = c(220, 245, 255), Color2 = c(60, 160, 220), Size = 1.9, Accessories = { "Cap", "Bowtie" } }, Bonus = { Coins = 0.05, Speed = 0.004 } })
+table.insert(list, { Id = "CandyCaneKatanino", DisplayName = "Candy Cane Katanino", Rarity = "Mythical", Emoji = "🍬", Quote = "sweet. sharp. festive.", Season = "Winter",
+	Body = { Shape = "Long", Color = c(250, 250, 250), Color2 = c(230, 30, 50), Size = 1.9, Accessories = { "Headband", "Shades" } }, Bonus = { Coins = 0.08 } })
+
 local Creatures = {
 	List = list,
 	ById = {} :: { [string]: CreatureDef },
@@ -90,12 +105,53 @@ local Creatures = {
 
 for _, def in list do
 	Creatures.ById[def.Id] = def
-	Creatures.ByRarity[def.Rarity] = Creatures.ByRarity[def.Rarity] or {}
-	table.insert(Creatures.ByRarity[def.Rarity], def)
+	if not def.Season then -- seasonal creatures never appear in the normal egg pools
+		Creatures.ByRarity[def.Rarity] = Creatures.ByRarity[def.Rarity] or {}
+		table.insert(Creatures.ByRarity[def.Rarity], def)
+	end
 end
 
 function Creatures.Get(id: string): CreatureDef?
-	return Creatures.ById[id]
+	-- Variants -------------------------------------------------------------------------------------
+-- Tier 0 = normal, 1 = Golden (merge 5 normal), 2 = Rainbow (merge 5 Golden). Shiny = 1% hatch chance.
+Creatures.TierNames = { [0] = "", [1] = "Golden", [2] = "Rainbow" }
+Creatures.TierMultiplier = { [0] = 1, [1] = 3, [2] = 10 }
+Creatures.ShinyMultiplier = 1.5
+Creatures.MergeCount = 5
+Creatures.MaxTier = 2
+Creatures.ShinyChance = 0.01
+
+function Creatures.EntryMultiplier(entry: any): number
+	local tier = math.clamp(entry and entry.Tier or 0, 0, Creatures.MaxTier)
+	return (Creatures.TierMultiplier[tier] or 1) * ((entry and entry.Shiny) and Creatures.ShinyMultiplier or 1)
+end
+
+-- Bonus of an owned creature (inventory entry {Id, Tier, Shiny}).
+function Creatures.GetEntryBonus(entry: any): { Coins: number, Xp: number, Speed: number, Training: number }
+	local bonus = Creatures.GetBonus(entry.Id)
+	local m = Creatures.EntryMultiplier(entry)
+	return { Coins = bonus.Coins * m, Xp = bonus.Xp * m, Speed = bonus.Speed * m, Training = bonus.Training * m }
+end
+
+function Creatures.GetEntryPower(entry: any): number
+	return Creatures.GetPower(entry.Id) * Creatures.EntryMultiplier(entry)
+end
+
+-- "Golden Shiny Bananito Bonkerino"
+function Creatures.EntryName(entry: any): string
+	local def = Creatures.Get(entry.Id)
+	local prefix = ""
+	if entry.Shiny then
+		prefix ..= "✨Shiny "
+	end
+	local tier = Creatures.TierNames[entry.Tier or 0] or ""
+	if tier ~= "" then
+		prefix ..= tier .. " "
+	end
+	return prefix .. (def and def.DisplayName or entry.Id)
+end
+
+return Creatures.ById[id]
 end
 
 -- Final bonus values for a creature after rarity scaling.
@@ -117,6 +173,45 @@ end
 function Creatures.GetPower(id: string): number
 	local b = Creatures.GetBonus(id)
 	return b.Coins + b.Xp * 0.8 + b.Speed * 6 + b.Training * 0.8
+end
+
+-- Variants -------------------------------------------------------------------------------------
+-- Tier 0 = normal, 1 = Golden (merge 5 normal), 2 = Rainbow (merge 5 Golden). Shiny = 1% hatch chance.
+Creatures.TierNames = { [0] = "", [1] = "Golden", [2] = "Rainbow" }
+Creatures.TierMultiplier = { [0] = 1, [1] = 3, [2] = 10 }
+Creatures.ShinyMultiplier = 1.5
+Creatures.MergeCount = 5
+Creatures.MaxTier = 2
+Creatures.ShinyChance = 0.01
+
+function Creatures.EntryMultiplier(entry: any): number
+	local tier = math.clamp(entry and entry.Tier or 0, 0, Creatures.MaxTier)
+	return (Creatures.TierMultiplier[tier] or 1) * ((entry and entry.Shiny) and Creatures.ShinyMultiplier or 1)
+end
+
+-- Bonus of an owned creature (inventory entry {Id, Tier, Shiny}).
+function Creatures.GetEntryBonus(entry: any): { Coins: number, Xp: number, Speed: number, Training: number }
+	local bonus = Creatures.GetBonus(entry.Id)
+	local m = Creatures.EntryMultiplier(entry)
+	return { Coins = bonus.Coins * m, Xp = bonus.Xp * m, Speed = bonus.Speed * m, Training = bonus.Training * m }
+end
+
+function Creatures.GetEntryPower(entry: any): number
+	return Creatures.GetPower(entry.Id) * Creatures.EntryMultiplier(entry)
+end
+
+-- "Golden Shiny Bananito Bonkerino"
+function Creatures.EntryName(entry: any): string
+	local def = Creatures.Get(entry.Id)
+	local prefix = ""
+	if entry.Shiny then
+		prefix ..= "✨Shiny "
+	end
+	local tier = Creatures.TierNames[entry.Tier or 0] or ""
+	if tier ~= "" then
+		prefix ..= tier .. " "
+	end
+	return prefix .. (def and def.DisplayName or entry.Id)
 end
 
 return Creatures

@@ -270,7 +270,107 @@ local function addAccessory(model: Model, root: BasePart, name: string, size: nu
 	end
 end
 
-function ModelBuilder.Creature(creatureId: string): Model
+------------------------------------------------------------------------------------------------
+-- Creature effects + variants. Applied to BOTH procedural creatures and your own 3D models from
+-- Assets/Creatures, so real models also get particles flying off them.
+------------------------------------------------------------------------------------------------
+local FIRE_TEXTURE = "rbxasset://textures/particles/fire_main.dds"
+local FACE_PARTS = {
+	Eye = true, Pupil = true, Shine = true, Mouth = true, Teeth = true, Tongue = true, Blush = true, Brow = true,
+	Shades = true, ShadesShine = true, Aura = true, Glow = true, Sole = true,
+}
+
+local function emitter(parent: Instance, props: { [string]: any })
+	local e = Instance.new("ParticleEmitter")
+	e.Texture = props.Texture or SPARKLE
+	e.Color = props.Color
+	e.LightEmission = props.LightEmission or 1
+	e.Rate = props.Rate or 4
+	e.Lifetime = props.Lifetime or NumberRange.new(0.8, 1.4)
+	e.Speed = props.Speed or NumberRange.new(1.5, 3.5)
+	e.SpreadAngle = props.Spread or Vector2.new(180, 180)
+	e.Acceleration = props.Acceleration or Vector3.new(0, 1.5, 0)
+	e.Size = props.Size or NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.35), NumberSequenceKeypoint.new(1, 0) })
+	e.Transparency = NumberSequence.new(0.1, 1)
+	e.RotSpeed = NumberRange.new(-120, 120)
+	e.Rotation = NumberRange.new(0, 360)
+	e.Parent = parent
+	return e
+end
+
+-- tier: 0 normal, 1 Golden, 2 Rainbow. shiny: boolean.
+function ModelBuilder.ApplyCreatureEffects(model: Model, rarityName: string, tier: number?, shiny: boolean?)
+	local root = model.PrimaryPart
+	if not root then
+		return
+	end
+	local rarity = Rarities.Get(rarityName)
+	local t = tier or 0
+	-- every creature sheds a few rarity-coloured particles; rarer ones a lot more
+	emitter(root, { Color = ColorSequence.new(rarity.Color, rarity.Color2), Rate = 0.6 + rarity.Order * 0.9,
+		Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.2 + rarity.Order * 0.03), NumberSequenceKeypoint.new(1, 0) }) })
+	if rarityName == "Mythical" then
+		emitter(root, { Texture = FIRE_TEXTURE, Color = ColorSequence.new(Color3.fromRGB(255, 200, 80), Color3.fromRGB(255, 40, 60)), Rate = 8,
+			Size = NumberSequence.new(0.9, 0.1), Speed = NumberRange.new(0.5, 1.5), Acceleration = Vector3.new(0, 4, 0) })
+	elseif rarityName == "Cosmic" then
+		emitter(root, { Color = ColorSequence.new(Color3.fromRGB(180, 120, 255), Color3.fromRGB(60, 230, 255)), Rate = 10, Speed = NumberRange.new(3, 6),
+			Size = NumberSequence.new(0.5, 0), Acceleration = Vector3.zero })
+	elseif rarityName == "Secret" then
+		emitter(root, { Color = ColorSequence.new(Color3.fromRGB(40, 255, 120), Color3.fromRGB(255, 0, 200)), Rate = 14, Speed = NumberRange.new(4, 8),
+			Size = NumberSequence.new(0.6, 0), Lifetime = NumberRange.new(0.3, 0.6) })
+	end
+	local function tint(color: Color3, amount: number, material: Enum.Material?)
+		for _, d in model:GetDescendants() do
+			if d:IsA("BasePart") and not FACE_PARTS[d.Name] and d.Transparency < 1 then
+				d.Color = d.Color:Lerp(color, amount)
+				if material then
+					d.Material = material
+				end
+			end
+		end
+	end
+	if t == 1 then
+		tint(Color3.fromRGB(255, 200, 40), 0.65, Enum.Material.Foil)
+		emitter(root, { Color = ColorSequence.new(Color3.fromRGB(255, 230, 120), Color3.fromRGB(255, 170, 0)), Rate = 10, Size = NumberSequence.new(0.45, 0) })
+		local light = Instance.new("PointLight")
+		light.Color = Color3.fromRGB(255, 200, 80)
+		light.Range = 10
+		light.Parent = root
+	elseif t >= 2 then
+		for _, d in model:GetDescendants() do
+			if d:IsA("BasePart") and not FACE_PARTS[d.Name] and d.Transparency < 1 then
+				d:SetAttribute("Rainbow", true) -- PetController cycles the colour of these parts
+				d.Material = Enum.Material.Neon
+			end
+		end
+		emitter(root, { Color = ColorSequence.new({
+			ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 60, 60)), ColorSequenceKeypoint.new(0.33, Color3.fromRGB(255, 230, 60)),
+			ColorSequenceKeypoint.new(0.66, Color3.fromRGB(60, 220, 120)), ColorSequenceKeypoint.new(1, Color3.fromRGB(80, 140, 255)) }),
+			Rate = 16, Size = NumberSequence.new(0.55, 0), Speed = NumberRange.new(2, 5) })
+		model:SetAttribute("Rainbow", true)
+	end
+	if shiny then
+		emitter(root, { Color = ColorSequence.new(Color3.new(1, 1, 1), Color3.fromRGB(150, 240, 255)), Rate = 12, Size = NumberSequence.new(0.7, 0),
+			Speed = NumberRange.new(0.5, 1.5), Lifetime = NumberRange.new(0.5, 0.9) })
+		local light = Instance.new("PointLight")
+		light.Color = Color3.fromRGB(200, 240, 255)
+		light.Range = 9
+		light.Brightness = 1.5
+		light.Parent = root
+		model:SetAttribute("Shiny", true)
+	end
+end
+
+function ModelBuilder.Creature(creatureId: string, tier: number?, shiny: boolean?): Model
+	local def = Creatures.Get(creatureId)
+	local model = ModelBuilder.CreatureBase(creatureId)
+	if def then
+		ModelBuilder.ApplyCreatureEffects(model, def.Rarity, tier, shiny)
+	end
+	return model
+end
+
+function ModelBuilder.CreatureBase(creatureId: string): Model
 	local def = Creatures.Get(creatureId)
 	if def then
 		local override = ModelBuilder.GetOverride("Creatures", creatureId)
@@ -403,7 +503,6 @@ function ModelBuilder.Creature(creatureId: string): Model
 		light.Range = 6 + rarity.Order
 		light.Brightness = 1
 		light.Parent = root
-		addSparkles(root, rarity.Color, rarity.Order >= 8 and 6 or 3, 0.3)
 	end
 
 	return model

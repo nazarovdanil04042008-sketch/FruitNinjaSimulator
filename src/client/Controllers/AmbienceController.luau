@@ -63,6 +63,7 @@ local DAY_INDOOR = Color3.fromRGB(90, 90, 100)
 local NIGHT_INDOOR = Color3.fromRGB(65, 70, 105)
 local DUSK_TINT = Color3.fromRGB(255, 225, 200)
 local NIGHT_TINT = Color3.fromRGB(205, 215, 255)
+local seasonId = ""
 local nightFactor = 0
 
 local function clockNow(): number
@@ -92,7 +93,8 @@ local function updateLighting()
 	Lighting.Ambient = DAY_INDOOR:Lerp(NIGHT_INDOOR, night)
 	local cc = Lighting:FindFirstChild("FNS_Color")
 	if cc and cc:IsA("ColorCorrectionEffect") then
-		cc.TintColor = Color3.new(1, 1, 1):Lerp(DUSK_TINT, math.min(dusk, 1) * 0.8):Lerp(NIGHT_TINT, night * 0.6)
+		local nightTint = seasonId == "Halloween" and Color3.fromRGB(215, 170, 255) or NIGHT_TINT
+		cc.TintColor = Color3.new(1, 1, 1):Lerp(DUSK_TINT, math.min(dusk, 1) * 0.8):Lerp(nightTint, night * 0.6)
 	end
 end
 
@@ -109,7 +111,7 @@ local function resetPetal(petal: Petal, focus: Vector3, anywhere: boolean)
 	local r = math.sqrt(rng:NextNumber()) * PETAL_RADIUS
 	local y = anywhere and rng:NextNumber(1, 26) or rng:NextNumber(18, 28)
 	petal.Pos = Vector3.new(focus.X + math.cos(a) * r, focus.Y - 3 + y, focus.Z + math.sin(a) * r)
-	petal.Fall = rng:NextNumber(1.6, 3)
+	petal.Fall = seasonId == "Winter" and rng:NextNumber(1, 1.8) or rng:NextNumber(1.6, 3)
 	petal.Phase = rng:NextNumber(0, 10)
 end
 
@@ -264,6 +266,44 @@ local function step(dt: number)
 	end
 end
 
+-- Seasonal look (client-side only): snow in winter, spooky leaves at Halloween, extra petals in spring.
+local function applySeason(id: string)
+	seasonId = id
+	local palette
+	if id == "Winter" then
+		palette = { Color3.fromRGB(255, 255, 255), Color3.fromRGB(235, 245, 255), Color3.fromRGB(220, 235, 255) }
+		pcall(function()
+			workspace.Terrain:SetMaterialColor(Enum.Material.Grass, Color3.fromRGB(215, 230, 235))
+		end)
+	elseif id == "Halloween" then
+		palette = { Color3.fromRGB(255, 140, 30), Color3.fromRGB(150, 70, 200), Color3.fromRGB(200, 90, 20) }
+	elseif id == "Spring" then
+		palette = { Color3.fromRGB(255, 183, 205), Color3.fromRGB(255, 160, 190), Color3.fromRGB(255, 220, 235) }
+	end
+	for i, petal in petals do
+		if palette then
+			petal.Part.Color = palette[(i % #palette) + 1]
+			if id == "Winter" then
+				petal.Part.Size = Vector3.new(0.3, 0.3, 0.3)
+				petal.Part.Shape = Enum.PartType.Ball
+				petal.Part.Material = Enum.Material.Neon
+				petal.Fall = 1.2
+			end
+		end
+	end
+	if id ~= "" then
+		local LiveOps = require(game:GetService("ReplicatedStorage").Shared.Config.LiveOps)
+		for _, s in LiveOps.Seasons do
+			if s.Id == id then
+				task.delay(6, function()
+					local Effects = require(script.Parent.Parent.UI.Effects)
+					Effects.Banner(s.Emoji .. " " .. s.DisplayName .. "! Special eggs in every arena " .. s.Emoji, s.Color, 3, 0.2)
+				end)
+			end
+		end
+	end
+end
+
 function AmbienceController.Init()
 	folder = Instance.new("Folder")
 	folder.Name = "FNS_Ambience"
@@ -273,6 +313,10 @@ function AmbienceController.Init()
 	buildCranes()
 	buildKoi()
 	RunService.RenderStepped:Connect(step)
+	applySeason(workspace:GetAttribute("FNS_Season") or "")
+	workspace:GetAttributeChangedSignal("FNS_Season"):Connect(function()
+		applySeason(workspace:GetAttribute("FNS_Season") or "")
+	end)
 	task.spawn(function()
 		while true do
 			updateLighting()

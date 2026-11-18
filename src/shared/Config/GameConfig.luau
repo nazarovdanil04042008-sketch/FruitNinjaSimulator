@@ -5,7 +5,7 @@
 local GameConfig = {}
 
 -- Shown on screen (bottom-left) and in the Output window, so you can always see which build you're running.
-GameConfig.Version = "3.0 - Bosses & Rewards"
+GameConfig.Version = "4.0 - Ultimate Update"
 
 GameConfig.DataStoreName = "FruitNinjaSimulator_PlayerData_v1"
 GameConfig.DataVersion = 1
@@ -16,6 +16,16 @@ GameConfig.SessionLockTimeout = 60 * 10 -- a lock older than this is considered 
 GameConfig.Lake = { Center = Vector3.new(84, 0, 84), Radius = 26 }
 GameConfig.DayNightCycle = 12 * 60 -- seconds for a full day + night (synced for everyone via server time)
 GameConfig.DayFraction = 0.7 -- share of the cycle that is daytime
+
+-- Testing helpers (Studio only - ignored on live servers)
+GameConfig.ForceSeason = "" -- "Spring" | "Halloween" | "Winter" to test a season in Studio
+
+-- Rebirth: cost = RebirthBaseCost * RebirthCostGrowth ^ rebirths, needs RebirthLevel + rebirths * 5
+GameConfig.RebirthBaseCost = 150000
+GameConfig.RebirthCostGrowth = 3
+GameConfig.RebirthLevel = 15
+GameConfig.RebirthCoinBonus = 0.5 -- +50% coins per rebirth (multiplicative with everything else)
+GameConfig.RebirthXpBonus = 0.25
 
 -- Progression
 GameConfig.StartingCoins = 50

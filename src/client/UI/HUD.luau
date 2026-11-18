@@ -47,6 +47,8 @@ local MENU = {
 	{ Window = "Build", Emoji = "🏯", Label = "Village", Color = Color3.fromRGB(220, 70, 60) },
 	{ Window = "Trade", Emoji = "🤝", Label = "Trade", Color = Color3.fromRGB(90, 200, 120) },
 	{ Window = "Rewards", Emoji = "🎁", Label = "Rewards", Color = Color3.fromRGB(255, 110, 190) },
+	{ Window = "Rebirth", Emoji = "🔁", Label = "Rebirth", Color = Color3.fromRGB(255, 150, 50) },
+	{ Window = "Store", Emoji = "💎", Label = "Store", Color = Color3.fromRGB(80, 200, 255) },
 }
 
 local function buildVersionLabel(root: ScreenGui)
@@ -57,7 +59,7 @@ end
 
 local function build(root: ScreenGui)
 	-- Everything on the left lives in one column that is scaled as a unit (anchored top-left).
-	container = new("Frame", { Name = "HUD", BackgroundTransparency = 1, Size = UDim2.fromOffset(320, 460), Parent = root })
+	container = new("Frame", { Name = "HUD", BackgroundTransparency = 1, Size = UDim2.fromOffset(320, 540), Parent = root })
 	UIKit.AutoScale(container)
 
 	-- Level + XP + coins panel
@@ -90,8 +92,8 @@ local function build(root: ScreenGui)
 		infoLabels[key] = UIKit.Label({ Text = "", Size = UDim2.new(1, 0, 0, 20), AlignX = Enum.TextXAlignment.Left, Font = Theme.BodyFont, LayoutOrder = i, Parent = infoCard, MaxTextSize = 18 })
 	end
 
-	-- Menu buttons (4 columns x 3 rows)
-	menu = new("Frame", { Name = "Menu", BackgroundTransparency = 1, Size = UDim2.fromOffset(304, 226), Position = UDim2.fromOffset(10, 214), Parent = container })
+	-- Menu buttons (4 columns x 4 rows)
+	menu = new("Frame", { Name = "Menu", BackgroundTransparency = 1, Size = UDim2.fromOffset(304, 304), Position = UDim2.fromOffset(10, 214), Parent = container })
 	new("UIGridLayout", { CellSize = UDim2.fromOffset(70, 70), CellPadding = UDim2.fromOffset(8, 8), SortOrder = Enum.SortOrder.LayoutOrder, Parent = menu })
 	for i, entry in MENU do
 		local button = UIKit.Button({ Name = entry.Window, Text = "", Color = entry.Color, LayoutOrder = i, Radius = 16, Parent = menu,
@@ -131,7 +133,7 @@ local function refresh(profile: any)
 	local trail = Trails.Get(profile.EquippedTrail)
 	infoLabels.Speed.Text = string.format("⚡ Speed: %.1f  (%s)", derived.WalkSpeed, Format.Multiplier(derived.SpeedMultiplier))
 	infoLabels.Katana.Text = "⚔️ " .. Katanas.Get(profile.EquippedKatana).DisplayName .. "  " .. Format.Multiplier(derived.CoinMultiplier) .. " coins"
-	infoLabels.Belt.Text = "🥋 " .. Belts.Get(profile.EquippedBelt).DisplayName .. "  •  Training Lv " .. profile.TrainingLevel
+	infoLabels.Belt.Text = "🥋 " .. Belts.Get(profile.EquippedBelt).DisplayName .. "  •  Training Lv " .. profile.TrainingLevel .. ((profile.Rebirths or 0) > 0 and ("  •  🔁 " .. profile.Rebirths) or "")
 	infoLabels.Trail.Text = "✨ " .. (trail and trail.DisplayName or "No trail") .. "  •  🐾 " .. #profile.EquippedCreatures .. "/" .. derived.PetSlots
 end
 

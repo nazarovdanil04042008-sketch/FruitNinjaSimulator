@@ -57,7 +57,7 @@ local function offerView(owner: Player, offer: Offer): any
 	for _, uid in offer.Creatures do
 		local entry = profile and profile.Creatures[uid]
 		if entry then
-			table.insert(list, { Uid = uid, Id = entry.Id })
+			table.insert(list, { Uid = uid, Id = entry.Id, Tier = entry.Tier or 0, Shiny = entry.Shiny == true })
 		end
 	end
 	return { Creatures = list, Coins = offer.Coins }
@@ -130,7 +130,7 @@ local function transfer(from: Player, to: Player, fromProfile: any, toProfile: a
 			table.remove(fromProfile.EquippedCreatures, index)
 		end
 		local newUid = DataService.NewUid(to, "c")
-		toProfile.Creatures[newUid] = { Id = entry.Id, Obtained = os.time() }
+		toProfile.Creatures[newUid] = { Id = entry.Id, Obtained = os.time(), Tier = entry.Tier or 0, Shiny = entry.Shiny == true }
 		toProfile.Discovered[entry.Id] = true
 	end
 	fromProfile.Coins -= offer.Coins

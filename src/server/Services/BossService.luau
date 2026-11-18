@@ -125,6 +125,10 @@ local function finish(defeated: boolean)
 			ProgressionService.AddCoins(player, coins)
 			ProgressionService.AddXp(player, xp)
 			local eggAdded = egg and EggService.AddEgg(player, egg) or false
+			if defeated then
+				profile.Totals.BossesDefeated = (profile.Totals.BossesDefeated or 0) + 1
+				QuestBus.Fire(player, "BossDefeated", 1)
+			end
 			remotes.BossEvent:FireClient(player, "Result", {
 				Defeated = defeated, Rank = rank, Players = #ranking, Damage = entry.Damage,
 				Coins = coins, Xp = xp, Egg = eggAdded and egg or nil, BossName = bossDef.DisplayName,
@@ -204,6 +208,7 @@ local function onAttack(player: Player)
 		amount *= 2
 	end
 	damage[player] = (damage[player] or 0) + amount
+	profile.Totals.BossDamage = (profile.Totals.BossDamage or 0) + amount
 	hp -= amount
 	hpDirty = true
 	QuestBus.Fire(player, "Boss", 1)

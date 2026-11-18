@@ -73,6 +73,9 @@ function ShopService.Init()
 		if profile.Level < def.RequiredLevel then
 			return false, "Reach level " .. def.RequiredLevel .. " first!"
 		end
+		if def.RequiredRebirths and profile.Rebirths < def.RequiredRebirths then
+			return false, "Exclusive: unlocks at Rebirth " .. def.RequiredRebirths .. "!"
+		end
 		if not ProgressionService.SpendCoins(player, def.Price) then
 			return false, "Not enough coins! You need " .. Format.Short(def.Price) .. "."
 		end
@@ -132,6 +135,12 @@ function ShopService.Init()
 		end
 		if profile.Level < def.RequiredLevel then
 			return false, "Reach level " .. def.RequiredLevel .. " first!"
+		end
+		if def.RequiredRebirths and profile.Rebirths < def.RequiredRebirths then
+			return false, "Exclusive: unlocks at Rebirth " .. def.RequiredRebirths .. "!"
+		end
+		if def.RequiredPass and not profile.Passes[def.RequiredPass] then
+			return false, "Exclusive: comes with the " .. def.RequiredPass .. " game pass (💎 Store)."
 		end
 		if not ProgressionService.SpendCoins(player, def.Price) then
 			return false, "Not enough coins! You need " .. Format.Short(def.Price) .. "."

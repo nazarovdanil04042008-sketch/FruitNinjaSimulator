@@ -162,12 +162,12 @@ function EquipmentService.Refresh(player: Player, force: boolean?)
 		return
 	end
 
-	-- Pets: a comma-separated list of creature ids, rendered client-side by PetController.
+	-- Pets: "Id:tier:shiny" entries separated by commas, rendered client-side by PetController.
 	local ids = {}
 	for _, uid in profile.EquippedCreatures do
 		local entry = profile.Creatures[uid]
 		if entry then
-			table.insert(ids, entry.Id)
+			table.insert(ids, entry.Id .. ":" .. (entry.Tier or 0) .. ":" .. (entry.Shiny and 1 or 0))
 		end
 	end
 	local pets = table.concat(ids, ",")

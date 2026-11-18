@@ -27,9 +27,8 @@ local EggService = {}
 local rng = Random.new()
 local hatchRevealRemote: RemoteEvent
 
-local function rollRarity(egg: Eggs.EggDef): string
-	-- Lucky Hatch event: Epic and rarer become more likely
-	local luck = EventService.Get("Luck")
+local function rollRarity(egg: Eggs.EggDef, luck: number): string
+	-- Luck (Lucky Hatch event, Lucky pass, Luck Potion): Epic and rarer become more likely
 	local function weightOf(rarity: any): number?
 		local weight = egg.Weights[rarity.Name]
 		if weight and rarity.Order >= 4 then
@@ -64,9 +63,32 @@ local function rollRarity(egg: Eggs.EggDef): string
 	return "Common"
 end
 
-local function rollCreature(egg: Eggs.EggDef): string
-	local pool = Creatures.ByRarity[rollRarity(egg)]
+local function rollCreature(egg: Eggs.EggDef, luck: number): string
+	if egg.Pool then
+		-- seasonal eggs: explicit pool (rarer entries get the luck bonus too)
+		local total = 0
+		for i, entry in egg.Pool do
+			total += entry.Weight * (i > 1 and luck or 1)
+		end
+		local roll = rng:NextNumber(0, total)
+		for i, entry in egg.Pool do
+			roll -= entry.Weight * (i > 1 and luck or 1)
+			if roll <= 0 then
+				return entry.Id
+			end
+		end
+		return egg.Pool[1].Id
+	end
+	local pool = Creatures.ByRarity[rollRarity(egg, luck)]
 	return pool[rng:NextInteger(1, #pool)].Id
+end
+
+local function playerLuck(profile: any): number
+	return EventService.Get("Luck") * Formulas.Luck(profile)
+end
+
+function EggService.MaxEggs(profile: any): number
+	return GameConfig.MaxPendingEggs + ((profile.Passes and profile.Passes.FastHatch) and 4 or 0)
 end
 
 local function countCreatures(profile: any): number
@@ -84,7 +106,7 @@ function EggService.AddEgg(player: Player, eggId: string): boolean
 	if not profile or not def then
 		return false
 	end
-	if #profile.Eggs >= GameConfig.MaxPendingEggs then
+	if #profile.Eggs >= EggService.MaxEggs(profile) then
 		-- Inventory full: convert to coins so slicing an egg never feels wasted.
 		local refund = math.floor(def.HatchTime * 2)
 		ProgressionService.AddCoins(player, refund)
@@ -94,7 +116,7 @@ function EggService.AddEgg(player: Player, eggId: string): boolean
 	table.insert(profile.Eggs, {
 		Uid = DataService.NewUid(player, "e"),
 		EggId = def.Id,
-		HatchAt = os.time() + def.HatchTime,
+		HatchAt = os.time() + math.ceil(def.HatchTime / ((profile.Passes and profile.Passes.FastHatch) and 2 or 1)),
 	})
 	DataService.Replicate(player)
 	return true
@@ -122,24 +144,33 @@ local function hatch(player: Player, profile: any, index: number, egg: any): (bo
 		return false, "That egg no longer exists."
 	end
 	table.remove(profile.Eggs, index)
-	local creatureId = rollCreature(def)
+	local luck = playerLuck(profile)
+	local creatureId = rollCreature(def, luck)
+	local shiny = rng:NextNumber() < Creatures.ShinyChance * ((profile.Passes and profile.Passes.Lucky) and 2 or 1) * (luck > 1 and 2 or 1)
 	local creature = Creatures.Get(creatureId) :: Creatures.CreatureDef
 	local isNew = not profile.Discovered[creatureId]
 	local uid = DataService.NewUid(player, "c")
-	profile.Creatures[uid] = { Id = creatureId, Obtained = os.time() }
+	profile.Creatures[uid] = { Id = creatureId, Obtained = os.time(), Tier = 0, Shiny = shiny }
 	profile.Discovered[creatureId] = true
 	profile.Totals.EggsHatched += 1
 	QuestBus.Fire(player, "Hatch", 1)
 
 	-- Auto-equip into a free slot so new players immediately feel the bonus.
-	if #profile.EquippedCreatures < Formulas.PetSlots(profile.Level) then
+	if #profile.EquippedCreatures < Formulas.PetSlots(profile.Level, profile) then
 		table.insert(profile.EquippedCreatures, uid)
 	end
 
 	DataService.Replicate(player)
 	ProgressionService.ApplyCharacterStats(player)
 	EquipmentService.Refresh(player, false)
-	hatchRevealRemote:FireClient(player, creatureId, isNew, uid, egg.EggId)
+	hatchRevealRemote:FireClient(player, creatureId, isNew, uid, egg.EggId, shiny)
+	if shiny then
+		QuestBus.Fire(player, "ShinyHatch", 1)
+		ProgressionService.NotifyAll("✨ " .. player.DisplayName .. " hatched a SHINY " .. creature.DisplayName .. "!", "rare")
+	end
+	if creature.Rarity == "Secret" then
+		QuestBus.Fire(player, "SecretHatch", 1)
+	end
 
 	local rarity = Rarities.Get(creature.Rarity)
 	if rarity.Order >= 6 then
@@ -151,13 +182,13 @@ end
 local function equipBest(profile: any)
 	local list = {}
 	for uid, entry in profile.Creatures do
-		table.insert(list, { uid = uid, power = Creatures.GetPower(entry.Id) })
+		table.insert(list, { uid = uid, power = Creatures.GetEntryPower(entry) })
 	end
 	table.sort(list, function(a, b)
 		return a.power > b.power
 	end)
 	local equipped = {}
-	for i = 1, math.min(Formulas.PetSlots(profile.Level), #list) do
+	for i = 1, math.min(Formulas.PetSlots(profile.Level, profile), #list) do
 		table.insert(equipped, list[i].uid)
 	end
 	profile.EquippedCreatures = equipped
@@ -228,7 +259,7 @@ function EggService.Init()
 		if table.find(profile.EquippedCreatures, uid) then
 			return false, "Already equipped."
 		end
-		local slots = Formulas.PetSlots(profile.Level)
+		local slots = Formulas.PetSlots(profile.Level, profile)
 		if #profile.EquippedCreatures >= slots then
 			return false, "All " .. slots .. " slots are full. Unequip one first (or level up for more slots)."
 		end
@@ -253,6 +284,46 @@ function EggService.Init()
 		return true, "Equipped your best creatures!"
 	end)
 
+	-- Merge 5 creatures of the same kind and tier into one of the next tier (Golden x3, Rainbow x10).
+	-- Shiny is kept if any of the merged creatures was shiny.
+	ActionService.Register("MergeCreatures", function(player, profile, creatureId: any, tier: any)
+		if not ActionService.IsString(creatureId) or not Creatures.Get(creatureId) or not ActionService.IsInteger(tier, 0, Creatures.MaxTier - 1) then
+			return false, "Invalid merge."
+		end
+		local matches = {}
+		for uid, entry in profile.Creatures do
+			if entry.Id == creatureId and (entry.Tier or 0) == tier then
+				table.insert(matches, uid)
+			end
+		end
+		if #matches < Creatures.MergeCount then
+			return false, "You need " .. Creatures.MergeCount .. " of them (you have " .. #matches .. ")."
+		end
+		-- prefer merging shiny ones last so non-shiny duplicates are used first
+		table.sort(matches, function(a, b)
+			local sa, sb = profile.Creatures[a].Shiny and 1 or 0, profile.Creatures[b].Shiny and 1 or 0
+			return sa < sb
+		end)
+		local shiny = false
+		for i = 1, Creatures.MergeCount do
+			local uid = matches[i]
+			shiny = shiny or profile.Creatures[uid].Shiny == true
+			profile.Creatures[uid] = nil
+			local index = table.find(profile.EquippedCreatures, uid)
+			if index then
+				table.remove(profile.EquippedCreatures, index)
+			end
+		end
+		local newUid = DataService.NewUid(player, "c")
+		profile.Creatures[newUid] = { Id = creatureId, Obtained = os.time(), Tier = tier + 1, Shiny = shiny }
+		if #profile.EquippedCreatures < Formulas.PetSlots(profile.Level, profile) then
+			table.insert(profile.EquippedCreatures, newUid)
+		end
+		afterCreatureChange(player)
+		QuestBus.Fire(player, "Merge", 1)
+		return true, "Created " .. Creatures.EntryName(profile.Creatures[newUid]) .. "!", newUid
+	end)
+
 	ActionService.Register("ReleaseCreature", function(player, profile, uid: any)
 		local entry = type(uid) == "string" and profile.Creatures[uid]
 		if not entry then
@@ -260,7 +331,7 @@ function EggService.Init()
 		end
 		local def = Creatures.Get(entry.Id)
 		local rarity = Rarities.Get(def and def.Rarity or "Common")
-		local refund = GameConfig.ReleaseCreatureRefund[rarity.Order] or 5
+		local refund = math.floor((GameConfig.ReleaseCreatureRefund[rarity.Order] or 5) * Creatures.EntryMultiplier(entry))
 		profile.Creatures[uid] = nil
 		local index = table.find(profile.EquippedCreatures, uid)
 		if index then
@@ -270,6 +341,23 @@ function EggService.Init()
 		afterCreatureChange(player)
 		return true, "Released for " .. Format.Short(refund) .. " coins."
 	end)
+end
+
+-- Developer product: finish every pending egg right now (respects inventory space).
+function EggService.HatchAllNow(player: Player): number
+	local profile = DataService.Get(player)
+	if not profile then
+		return 0
+	end
+	local hatched = 0
+	while #profile.Eggs > 0 do
+		local ok = hatch(player, profile, 1, profile.Eggs[1])
+		if not ok then
+			break
+		end
+		hatched += 1
+	end
+	return hatched
 end
 
 function EggService.Start()

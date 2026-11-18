@@ -38,7 +38,7 @@ local nameLabel: TextLabel
 local newBadge: TextLabel
 local infoLabel: TextLabel
 local continueButton: TextButton
-local queue: { { Creature: string, IsNew: boolean, Egg: string? } } = {}
+local queue: { { Creature: string, IsNew: boolean, Egg: string?, Shiny: boolean? } } = {}
 local running = false
 local continueClicked = false
 
@@ -51,7 +51,7 @@ local function setRays(visible: boolean, color: Color3?)
 	end
 end
 
-local function play(entry: { Creature: string, IsNew: boolean, Egg: string? })
+local function play(entry: { Creature: string, IsNew: boolean, Egg: string?, Shiny: boolean? })
 	local def = Creatures.Get(entry.Creature)
 	if not def then
 		return
@@ -93,9 +93,9 @@ local function play(entry: { Creature: string, IsNew: boolean, Egg: string? })
 	UIKit.Tween(flash, 0.6, { BackgroundTransparency = 1 })
 
 	-- 3) Reveal
-	Viewport.SetModel(viewport, ModelBuilder.Creature(def.Id), nil, 1.4, 0.85)
+	Viewport.SetModel(viewport, ModelBuilder.Creature(def.Id, 0, entry.Shiny), nil, 1.4, 0.85)
 	setRays(rarity.Order >= 3, rarity.Color)
-	rarityLabel.Text = rarity.Name:upper()
+	rarityLabel.Text = (entry.Shiny and "✨ SHINY " or "") .. rarity.Name:upper()
 	rarityLabel.TextColor3 = rarity.Order == 10 and Color3.new(1, 1, 1) or rarity.Color
 	nameLabel.Text = def.Emoji .. " " .. def.DisplayName .. " " .. def.Emoji
 	newBadge.Visible = entry.IsNew
@@ -113,7 +113,9 @@ local function play(entry: { Creature: string, IsNew: boolean, Egg: string? })
 		UIKit.Tween(s, 0.35, { Scale = 1 }, Enum.EasingStyle.Back)
 	end
 	Effects.Play("Reveal", rarity.Order >= 6 and 0.8 or 1.1)
-	if rarity.Order >= 5 then
+	if entry.Shiny then
+		Effects.Banner("✨ SHINY! ✨ (1% chance)", Color3.fromRGB(200, 245, 255), 2, 0.12)
+	elseif rarity.Order >= 5 then
 		Effects.Banner("✨ " .. rarity.Name:upper() .. "! ✨", rarity.Order == 10 and Color3.new(1, 1, 1) or rarity.Color, 1.6, 0.12)
 	end
 
@@ -146,8 +148,8 @@ local function processQueue()
 	running = false
 end
 
-function HatchReveal.Show(creatureId: string, isNew: boolean, eggId: string?)
-	table.insert(queue, { Creature = creatureId, IsNew = isNew, Egg = eggId })
+function HatchReveal.Show(creatureId: string, isNew: boolean, eggId: string?, shiny: boolean?)
+	table.insert(queue, { Creature = creatureId, IsNew = isNew, Egg = eggId, Shiny = shiny })
 	task.spawn(processQueue)
 end
 
@@ -176,8 +178,8 @@ function HatchReveal.Init()
 		end })
 	flash = new("Frame", { BackgroundColor3 = Color3.new(1, 1, 1), BackgroundTransparency = 1, Size = UDim2.fromScale(1, 1), ZIndex = 10, Parent = gui })
 
-	Net.Event("HatchReveal").OnClientEvent:Connect(function(creatureId: string, isNew: boolean, _uid: string, eggId: string?)
-		HatchReveal.Show(creatureId, isNew, eggId)
+	Net.Event("HatchReveal").OnClientEvent:Connect(function(creatureId: string, isNew: boolean, _uid: string, eggId: string?, shiny: boolean?)
+		HatchReveal.Show(creatureId, isNew, eggId, shiny)
 	end)
 end
 

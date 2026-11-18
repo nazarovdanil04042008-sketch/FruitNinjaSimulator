@@ -20,6 +20,7 @@ export type KatanaDef = {
 	SwipeColor2: Color3,
 	Effect: string,
 	Description: string,
+	RequiredRebirths: number?, -- exclusive: free, unlocked by rebirthing
 }
 
 local function c(r: number, g: number, b: number): Color3
@@ -52,6 +53,10 @@ local list: { KatanaDef } = {
 		BladeColor = c(255, 60, 120), BladeMaterial = Enum.Material.ForceField, SwipeColor = c(255, 120, 200), SwipeColor2 = c(255, 230, 80), Effect = "Mythic",
 		Description = "The legendary blade of the Fruit Master. Pure power." },
 }
+
+table.insert(list, { Id = "Phoenix", DisplayName = "Phoenix Katana", Order = 9, Price = 0, RequiredLevel = 1, RequiredRebirths = 3, CoinMultiplier = 13, SliceRate = 2.2, HitRadius = 1.45,
+	BladeColor = c(255, 120, 40), BladeMaterial = Enum.Material.Neon, SwipeColor = c(255, 200, 80), SwipeColor2 = c(255, 60, 20), Effect = "Fire",
+	Description = "Reborn from the ashes. Rebirth 3 exclusive." })
 
 local Katanas = {
 	List = list,

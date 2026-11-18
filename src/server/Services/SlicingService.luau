@@ -28,6 +28,7 @@ local ProgressionService = require(script.Parent.ProgressionService)
 local EggService = require(script.Parent.EggService)
 local EventService = require(script.Parent.EventService)
 local QuestBus = require(script.Parent.QuestBus)
+local LiveOps = require(Shared.Config.LiveOps)
 
 local SlicingService = {}
 
@@ -224,6 +225,13 @@ local function chooseObject(arena: Arenas.ArenaDef, session: Session, t: number)
 			return "Bomb"
 		end
 		roll -= arena.BombChance
+	end
+	local season = EventService.Season()
+	if season and roll < LiveOps.SeasonEggChance then
+		return season.EggFruit
+	end
+	if season then
+		roll -= LiveOps.SeasonEggChance
 	end
 	local eggChance = arena.EggChance * EventService.Get("EggChance")
 	local goldenChance = arena.GoldenChance * EventService.Get("GoldenChance")

@@ -31,6 +31,7 @@ local detailBonus: TextLabel
 local detailCompare: TextLabel
 local equipButton: TextButton
 local releaseButton: TextButton
+local mergeButton: TextButton
 local emptyLabel: TextLabel
 local selectedUid: string? = nil
 local shownModelFor: string? = nil
@@ -55,7 +56,7 @@ end
 local function sortedCreatures(profile: any): { { uid: string, id: string, power: number, equipped: boolean } }
 	local list = {}
 	for uid, entry in profile.Creatures do
-		table.insert(list, { uid = uid, id = entry.Id, power = Creatures.GetPower(entry.Id), equipped = table.find(profile.EquippedCreatures, uid) ~= nil })
+		table.insert(list, { uid = uid, id = entry.Id, entry = entry, power = Creatures.GetEntryPower(entry), equipped = table.find(profile.EquippedCreatures, uid) ~= nil })
 	end
 	table.sort(list, function(a, b)
 		if a.equipped ~= b.equipped then
@@ -82,15 +83,32 @@ local function refreshDetail()
 	local rarity = Rarities.Get(def.Rarity)
 	if shownModelFor ~= selectedUid then
 		shownModelFor = selectedUid
-		Viewport.SetModel(detailViewport, Viewport.CreatureModel(def.Id), nil, 1.2)
+		local ModelBuilder = require(game:GetService("ReplicatedStorage").Shared.Util.ModelBuilder)
+		Viewport.SetModel(detailViewport, ModelBuilder.Creature(def.Id, entry.Tier or 0, entry.Shiny), nil, 1.2)
 	end
-	detailName.Text = def.Emoji .. " " .. def.DisplayName
-	detailRarity.Text = rarity.Name:upper()
+	detailName.Text = def.Emoji .. " " .. Creatures.EntryName(entry)
+	local tierName = Creatures.TierNames[entry.Tier or 0]
+	detailRarity.Text = rarity.Name:upper() .. (tierName ~= "" and ("  •  " .. tierName:upper() .. " x" .. Creatures.TierMultiplier[entry.Tier]) or "") .. (entry.Shiny and "  •  ✨SHINY x1.5" or "")
 	detailRarity.TextColor3 = rarity.Order == 10 and C.Text or rarity.Color
-	detailBonus.Text = bonusLines(Creatures.GetBonus(def.Id))
+	detailBonus.Text = bonusLines(Creatures.GetEntryBonus(entry))
+	-- merge: 5 of the same creature + tier -> next tier
+	local tier = entry.Tier or 0
+	if tier >= Creatures.MaxTier then
+		mergeButton.Visible = false
+	else
+		local same = 0
+		for _, e in profile.Creatures do
+			if e.Id == entry.Id and (e.Tier or 0) == tier then
+				same += 1
+			end
+		end
+		mergeButton.Visible = true
+		local nextName = Creatures.TierNames[tier + 1]
+		UIKit.SetButton(mergeButton, string.format("⬆ %s (%d/%d)", nextName, same, Creatures.MergeCount), same >= Creatures.MergeCount and (tier == 0 and C.Coins or C.Purple) or C.Locked)
+	end
 
 	local equipped = table.find(profile.EquippedCreatures, selectedUid) ~= nil
-	local slots = Formulas.PetSlots(profile.Level)
+	local slots = Formulas.PetSlots(profile.Level, profile)
 	if equipped then
 		UIKit.SetButton(equipButton, "UNEQUIP", C.Orange)
 		detailCompare.Text = "Equipped ✅"
@@ -101,13 +119,13 @@ local function refreshDetail()
 			for _, uid in profile.EquippedCreatures do
 				local e = profile.Creatures[uid]
 				if e then
-					local p = Creatures.GetPower(e.Id)
+					local p = Creatures.GetEntryPower(e)
 					if p < weakestPower then
 						weakest, weakestPower = e, p
 					end
 				end
 			end
-			local diff = Creatures.GetPower(def.Id) - weakestPower
+			local diff = Creatures.GetEntryPower(entry) - weakestPower
 			if weakest then
 				local weakDef = Creatures.Get(weakest.Id)
 				detailCompare.Text = (diff > 0 and "▲ Stronger" or diff < 0 and "▼ Weaker" or "= Same") .. " than your weakest (" .. (weakDef and weakDef.DisplayName or "?") .. ")"
@@ -118,7 +136,7 @@ local function refreshDetail()
 			detailCompare.TextColor3 = C.Green
 		end
 	end
-	UIKit.SetButton(releaseButton, "Release (🪙 " .. Format.Short(GameConfig.ReleaseCreatureRefund[rarity.Order] or 5) .. ")", C.Red)
+	UIKit.SetButton(releaseButton, "Release (🪙 " .. Format.Short(math.floor((GameConfig.ReleaseCreatureRefund[rarity.Order] or 5) * Creatures.EntryMultiplier(entry))) .. ")", C.Red)
 end
 
 local function refresh()
@@ -127,7 +145,7 @@ local function refresh()
 		return
 	end
 	local list = sortedCreatures(profile)
-	local slots = Formulas.PetSlots(profile.Level)
+	local slots = Formulas.PetSlots(profile.Level, profile)
 	headerLabel.Text = string.format("🐾 Equipped %d/%d   •   Inventory %d/%d", #profile.EquippedCreatures, slots, #list, GameConfig.MaxCreatureInventory)
 	local totals = Formulas.CreatureBonus(profile)
 	totalsLabel.Text = string.format("Total: 🪙 %s  ⭐ %s  ⚡ %s  🥋 %s", Format.Percent(totals.Coins), Format.Percent(totals.Xp), Format.Percent(totals.Speed), Format.Percent(totals.Training))
@@ -143,7 +161,9 @@ local function refresh()
 	for i, item in list do
 		local def = Creatures.Get(item.id) :: Creatures.CreatureDef
 		local rarity = Rarities.Get(def.Rarity)
-		local card = new("TextButton", { Name = item.uid, Text = "", AutoButtonColor = true, BackgroundColor3 = rarity.Color, LayoutOrder = i, ZIndex = 7, Parent = grid })
+		local tier = item.entry.Tier or 0
+		local cardColor = tier == 1 and Color3.fromRGB(255, 200, 40) or rarity.Color
+		local card = new("TextButton", { Name = item.uid, Text = "", AutoButtonColor = true, BackgroundColor3 = cardColor, LayoutOrder = i, ZIndex = 7, Parent = grid })
 		UIKit.Corner(12).Parent = card
 		UIKit.Stroke(item.uid == selectedUid and 4 or 2, item.uid == selectedUid and Color3.new(1, 1, 1) or C.Stroke).Parent = card
 		UIKit.Gradient(rarity.Color, rarity.Color2, 90).Parent = card
@@ -152,6 +172,12 @@ local function refresh()
 		UIKit.Label({ Text = rarity.Name, Size = UDim2.new(1, -8, 0, 16), Position = UDim2.fromOffset(4, 86), Parent = card, ZIndex = 8, MaxTextSize = 13, Font = Theme.BodyFont })
 		if item.equipped then
 			UIKit.Label({ Text = "✅", Size = UDim2.fromOffset(24, 24), Position = UDim2.new(1, -26, 0, 2), Parent = card, ZIndex = 9, Stroke = false })
+		end
+		if tier > 0 or item.entry.Shiny then
+			UIKit.Label({ Text = (tier == 2 and "🌈" or tier == 1 and "⭐" or "") .. (item.entry.Shiny and "✨" or ""), Size = UDim2.fromOffset(40, 22), Position = UDim2.fromOffset(2, 2), AlignX = Enum.TextXAlignment.Left, Parent = card, ZIndex = 9, Stroke = false })
+		end
+		if tier == 2 then
+			new("UIGradient", { Color = ColorSequence.new({ ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 90, 90)), ColorSequenceKeypoint.new(0.5, Color3.fromRGB(120, 230, 120)), ColorSequenceKeypoint.new(1, Color3.fromRGB(110, 140, 255)) }), Rotation = 45, Parent = card })
 		end
 		card.Activated:Connect(function()
 			selectedUid = item.uid
@@ -200,7 +226,22 @@ function PetsWindow.Init()
 				State.Action("EquipCreature", true, uid)
 			end
 		end })
-	releaseButton = UIKit.Button({ Text = "Release", Color = C.Red, Size = UDim2.new(1, -16, 0, 34), Position = UDim2.new(0, 8, 1, -42), Parent = detail, ZIndex = 7, MaxTextSize = 16,
+	mergeButton = UIKit.Button({ Text = "⬆ Golden", Color = C.Coins, Size = UDim2.new(0.5, -10, 0, 34), Position = UDim2.new(0.5, 2, 1, -42), Parent = detail, ZIndex = 7, MaxTextSize = 14,
+		OnClick = function()
+			local profile = State.Profile
+			local entry = profile and selectedUid and profile.Creatures[selectedUid]
+			if not entry then
+				return
+			end
+			local tier = entry.Tier or 0
+			UIKit.Confirm("Merge into " .. Creatures.TierNames[tier + 1] .. "?", "Uses " .. Creatures.MergeCount .. " of this creature to make 1 " .. Creatures.TierNames[tier + 1] .. " (x" .. Creatures.TierMultiplier[tier + 1] .. " bonus).", "Merge!", function()
+				local ok, _, newUid = State.Action("MergeCreatures", false, entry.Id, tier)
+				if ok and newUid then
+					selectedUid = newUid
+				end
+			end)
+		end })
+	releaseButton = UIKit.Button({ Text = "Release", Color = C.Red, Size = UDim2.new(0.5, -10, 0, 34), Position = UDim2.new(0, 8, 1, -42), Parent = detail, ZIndex = 7, MaxTextSize = 14,
 		OnClick = function()
 			local profile = State.Profile
 			local uid = selectedUid

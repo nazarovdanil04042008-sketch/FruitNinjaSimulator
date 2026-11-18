@@ -16,4 +16,11 @@ return {
 	Hatch = { Id = "rbxasset://sounds/glassbreak.wav", Volume = 0.5 },
 	Reveal = { Id = "rbxasset://sounds/victory.wav", Volume = 0.6 },
 	Whoosh = { Id = "rbxasset://sounds/swoosh.wav", Volume = 0.3 },
+
+	-- Background music (looped, cross-faded by MusicController). Roblox doesn't ship music with the
+	-- client, so paste "rbxassetid://<id>" of tracks you pick in Creator Store → Audio (filter "Music",
+	-- search "japanese", "koto", "shamisen", "epic boss"). Leave "" to keep silent.
+	MusicDay = { Id = "", Volume = 0.25 },
+	MusicNight = { Id = "", Volume = 0.22 },
+	MusicBoss = { Id = "", Volume = 0.35 },
 }

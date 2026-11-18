@@ -47,7 +47,7 @@ local inviteFrom: number? = nil
 local tradeState: any = nil
 local sending = false
 
-local function creatureCard(parent: Instance, creatureId: string, order: number, onClick: (() -> ())?, selected: boolean?): TextButton
+local function creatureCard(parent: Instance, creatureId: string, order: number, onClick: (() -> ())?, selected: boolean?, variant: any?): TextButton
 	local def = Creatures.Get(creatureId)
 	local rarity = Rarities.Get(def and def.Rarity or "Common")
 	local card = new("TextButton", { Text = "", AutoButtonColor = onClick ~= nil, BackgroundColor3 = rarity.Color, LayoutOrder = order, ZIndex = 8, Parent = parent })
@@ -56,6 +56,11 @@ local function creatureCard(parent: Instance, creatureId: string, order: number,
 	UIKit.Gradient(rarity.Color, rarity.Color2, 90).Parent = card
 	UIKit.Label({ Text = def and def.Emoji or "?", Size = UDim2.new(1, 0, 0, 34), Position = UDim2.fromOffset(0, 4), Parent = card, ZIndex = 9, Stroke = false })
 	UIKit.Label({ Text = def and def.DisplayName or creatureId, Size = UDim2.new(1, -6, 0, 26), Position = UDim2.fromOffset(3, 40), Parent = card, ZIndex = 9, MaxTextSize = 11 })
+	local tier = variant and variant.Tier or 0
+	if tier > 0 or (variant and variant.Shiny) then
+		UIKit.Label({ Text = (tier == 2 and "🌈" or tier == 1 and "⭐" or "") .. ((variant and variant.Shiny) and "✨" or ""), Size = UDim2.fromOffset(36, 18), Position = UDim2.fromOffset(2, 2),
+			AlignX = Enum.TextXAlignment.Left, Parent = card, ZIndex = 10, Stroke = false })
+	end
 	if selected then
 		UIKit.Label({ Text = "✅", Size = UDim2.fromOffset(20, 20), Position = UDim2.new(1, -22, 0, 2), Parent = card, ZIndex = 10, Stroke = false })
 	end
@@ -126,10 +131,10 @@ local function refreshTrade()
 	UIKit.ClearChildren(myGrid)
 	UIKit.ClearChildren(theirGrid)
 	for i, item in s.Mine.Creatures do
-		creatureCard(myGrid, item.Id, i)
+		creatureCard(myGrid, item.Id, i, nil, false, item)
 	end
 	for i, item in s.Theirs.Creatures do
-		creatureCard(theirGrid, item.Id, i)
+		creatureCard(theirGrid, item.Id, i, nil, false, item)
 	end
 	myCoinsLabel.Text = "🪙 " .. Format.Commas(s.Mine.Coins)
 	theirCoinsLabel.Text = "🪙 " .. Format.Commas(s.Theirs.Coins)
@@ -142,7 +147,7 @@ local function refreshTrade()
 	end
 	local list = {}
 	for uid, entry in profile.Creatures do
-		table.insert(list, { uid = uid, id = entry.Id, power = Creatures.GetPower(entry.Id) })
+		table.insert(list, { uid = uid, id = entry.Id, entry = entry, power = Creatures.GetEntryPower(entry) })
 	end
 	table.sort(list, function(a, b)
 		return a.power > b.power
@@ -157,7 +162,7 @@ local function refreshTrade()
 				table.insert(uids, item.uid)
 			end
 			task.spawn(sendOffer, uids, tradeState and tradeState.Mine.Coins or 0)
-		end, offered[item.uid])
+		end, offered[item.uid], item.entry)
 	end
 
 	UIKit.SetButton(readyButton, s.MyReady and "✅ Ready!" or "Ready", s.MyReady and C.Green or C.Blue)

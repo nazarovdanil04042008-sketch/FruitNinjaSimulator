@@ -24,12 +24,14 @@ local BuildController = require(Controllers.BuildController)
 local AmbienceController = require(Controllers.AmbienceController)
 local GrassController = require(Controllers.GrassController)
 local BossController = require(Controllers.BossController)
+local TutorialController = require(Controllers.TutorialController)
+local MusicController = require(Controllers.MusicController)
 
 FruitVisuals.Init()
 HUD.Init()
 
 -- Windows
-for _, name in { "UpgradesWindow", "ShopWindows", "PetsWindow", "EggsWindow", "IndexWindow", "TrainingWindow", "TeleportWindow", "BuildWindow", "TradeWindow", "RewardsWindow" } do
+for _, name in { "UpgradesWindow", "ShopWindows", "PetsWindow", "EggsWindow", "IndexWindow", "TrainingWindow", "TeleportWindow", "BuildWindow", "TradeWindow", "RewardsWindow", "StoreWindow", "RebirthWindow" } do
 	local ok, err = pcall(function()
 		require(UI.Windows:WaitForChild(name)).Init()
 	end)
@@ -47,6 +49,8 @@ BuildController.Init()
 AmbienceController.Init()
 GrassController.Init()
 BossController.Init()
+TutorialController.Init()
+MusicController.Init()
 
 -- Cross-controller rules
 SlicingController.IsBlocked = function()
@@ -58,15 +62,18 @@ end
 SlicingController.ActiveChanged:Connect(function(active: boolean)
 	HUD.SetSlicingMode(active)
 	PetController.SetLocalHidden(active)
+	TutorialController.SetHidden(active)
 	if active then
 		BuildController.Stop()
 	end
 end)
 BuildController.ModeChanged:Connect(function(mode: string?)
 	HUD.SetMenuVisible(mode == nil)
+	TutorialController.SetHidden(mode ~= nil)
 end)
 TrainingGames.ActiveChanged:Connect(function(active: boolean)
 	HUD.SetMenuVisible(not active)
+	TutorialController.SetHidden(active)
 	if active then
 		BuildController.Stop()
 	end

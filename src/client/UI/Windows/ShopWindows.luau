@@ -130,9 +130,9 @@ function ShopWindows.Init()
 			Color = def.SwipeColor,
 			Stats = string.format("🪙 %s coins  •  ⚔️ %s slice speed", Format.Multiplier(def.CoinMultiplier), Format.Multiplier(def.SliceRate)),
 			RequirementMet = function(profile)
-				return profile.Level >= def.RequiredLevel
+				return profile.Level >= def.RequiredLevel and (profile.Rebirths or 0) >= (def.RequiredRebirths or 0)
 			end,
-			RequirementText = "Level " .. def.RequiredLevel,
+			RequirementText = def.RequiredRebirths and ("Rebirth " .. def.RequiredRebirths) or ("Level " .. def.RequiredLevel),
 			Owned = function(profile)
 				return profile.OwnedKatanas[def.Id] == true
 			end,
@@ -222,9 +222,10 @@ function ShopWindows.Init()
 			Color = def.Colors[#def.Colors == 1 and 1 or 2],
 			Stats = string.format("⚡ %s speed%s", Format.Multiplier(def.SpeedMultiplier), def.Particles and "  •  ✨ particles" or ""),
 			RequirementMet = function(profile)
-				return profile.Level >= def.RequiredLevel
+				return profile.Level >= def.RequiredLevel and (profile.Rebirths or 0) >= (def.RequiredRebirths or 0)
+					and (def.RequiredPass == nil or (profile.Passes or {})[def.RequiredPass] == true)
 			end,
-			RequirementText = "Level " .. def.RequiredLevel,
+			RequirementText = def.RequiredPass and (def.RequiredPass .. " pass") or def.RequiredRebirths and ("Rebirth " .. def.RequiredRebirths) or ("Level " .. def.RequiredLevel),
 			Owned = function(profile)
 				return profile.OwnedTrails[def.Id] == true
 			end,

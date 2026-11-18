@@ -9,6 +9,7 @@ local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local LiveOps = require(ReplicatedStorage.Shared.Config.LiveOps)
+local GameConfig = require(ReplicatedStorage.Shared.Config.GameConfig)
 local ProgressionService = require(script.Parent.ProgressionService)
 
 local EventService = {}
@@ -28,8 +29,20 @@ function EventService.Current(): LiveOps.EventDef?
 	return current
 end
 
+-- Current season (Spring / Halloween / Winter) or nil. GameConfig.ForceSeason works in Studio only.
+function EventService.Season(): LiveOps.SeasonDef?
+	return LiveOps.CurrentSeason(os.time(), RunService:IsStudio() and GameConfig.ForceSeason or nil)
+end
+
+local lastSeason = nil
 local function update()
 	local now = os.time()
+	local season = EventService.Season()
+	local seasonId = season and season.Id or ""
+	if seasonId ~= lastSeason then
+		lastSeason = seasonId
+		workspace:SetAttribute("FNS_Season", seasonId)
+	end
 	local def, ends = LiveOps.CurrentEvent(now)
 	if studioOverride and now < studioOverride.Ends then
 		def, ends = studioOverride.Def, studioOverride.Ends

@@ -68,12 +68,12 @@ function ProgressionService.AddXp(player: Player, amount: number)
 	local coinReward = 0
 	while profile.Xp >= Formulas.XpForLevel(profile.Level) and profile.Level < 1000 do
 		profile.Xp -= Formulas.XpForLevel(profile.Level)
-		local oldSlots = Formulas.PetSlots(profile.Level)
+		local oldSlots = Formulas.PetSlots(profile.Level, profile)
 		profile.Level += 1
 		levelsGained += 1
 		coinReward += GameConfig.LevelUpCoinReward * profile.Level
-		if Formulas.PetSlots(profile.Level) > oldSlots then
-			ProgressionService.Notify(player, "🐾 New creature slot unlocked! (" .. Formulas.PetSlots(profile.Level) .. " slots)", "rare")
+		if Formulas.PetSlots(profile.Level, profile) > oldSlots then
+			ProgressionService.Notify(player, "🐾 New creature slot unlocked! (" .. Formulas.PetSlots(profile.Level, profile) .. " slots)", "rare")
 		end
 		for _, arena in Arenas.List do
 			if arena.RequiredLevel == profile.Level then
