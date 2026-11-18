@@ -5,7 +5,7 @@
 local GameConfig = {}
 
 -- Shown on screen (bottom-left) and in the Output window, so you can always see which build you're running.
-GameConfig.Version = "2.1 - Beautiful World"
+GameConfig.Version = "2.2 - Living World"
 
 GameConfig.DataStoreName = "FruitNinjaSimulator_PlayerData_v1"
 GameConfig.DataVersion = 1

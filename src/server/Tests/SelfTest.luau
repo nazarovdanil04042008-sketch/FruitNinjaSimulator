@@ -193,6 +193,15 @@ function SelfTest.Run()
 			return ModelBuilder.Katana(def.Id)
 		end)
 	end
+	for name, fn in {
+		BigTree = function() return JapaneseBuilder.BigTree(1, 3) end,
+		Bush = function() return JapaneseBuilder.Bush(1, 3, Color3.new(1, 0.5, 0.7)) end,
+		Reeds = function() return JapaneseBuilder.Reeds(2, 3) end,
+		RedLanternPost = function() return JapaneseBuilder.RedLanternPost(11) end,
+		Sakura = function() return JapaneseBuilder.Sakura(2, 3) end,
+	} do
+		tryBuild(name, fn)
+	end
 	tryBuild("mountain", function()
 		return JapaneseBuilder.Mountain(60, 20, 2)
 	end)

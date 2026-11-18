@@ -22,6 +22,7 @@ local PetController = require(Controllers.PetController)
 local WorldController = require(Controllers.WorldController)
 local BuildController = require(Controllers.BuildController)
 local AmbienceController = require(Controllers.AmbienceController)
+local GrassController = require(Controllers.GrassController)
 
 FruitVisuals.Init()
 HUD.Init()
@@ -43,6 +44,7 @@ PetController.Init()
 WorldController.Init()
 BuildController.Init()
 AmbienceController.Init()
+GrassController.Init()
 
 -- Cross-controller rules
 SlicingController.IsBlocked = function()

@@ -171,17 +171,22 @@ local function sakura(parent: Instance, position: Vector3, scale: number?)
 	return place(parent, JapaneseBuilder.Sakura(scale or 1.2, sakuraSeed), CFrame.new(position) * CFrame.Angles(0, sakuraSeed * 1.3, 0))
 end
 
-local function tree(parent: Instance, position: Vector3, leafColor: Color3, fruitColor: Color3?, scale: number)
-	part(parent, { Name = "Trunk", Shape = "Cylinder", Size = Vector3.new(8 * scale, 1.6 * scale, 1.6 * scale),
-		CFrame = CFrame.new(position + Vector3.new(0, 4 * scale, 0)) * CFrame.Angles(0, 0, math.rad(90)), Color = c(120, 80, 45), Material = Enum.Material.Wood })
-	local leaves = part(parent, { Name = "Leaves", Shape = "Ball", Size = Vector3.one * 8 * scale, Position = position + Vector3.new(0, 9 * scale, 0), Color = leafColor, Material = Enum.Material.Grass })
-	if fruitColor then
-		for i = 0, 3 do
-			local a = math.rad(i * 90 + 45)
-			part(parent, { Name = "TreeFruit", Shape = "Ball", Size = Vector3.one * 1.1 * scale, CanCollide = false,
-				Position = leaves.Position + Vector3.new(math.cos(a) * 3.6 * scale, -0.5 * scale, math.sin(a) * 3.6 * scale), Color = fruitColor })
-		end
-	end
+local treeSeed = 0
+local function tree(parent: Instance, position: Vector3, _leafColor: Color3, _fruitColor: Color3?, scale: number)
+	treeSeed += 1
+	return place(parent, JapaneseBuilder.BigTree(scale * 0.6, treeSeed), CFrame.new(position) * CFrame.Angles(0, treeSeed * 2.1, 0))
+end
+
+local decorRng = Random.new(77)
+local function rng(a: number, b: number): number
+	return decorRng:NextNumber(a, b)
+end
+
+local bushSeed = 0
+local BUSH_FLOWERS = { nil, Color3.fromRGB(255, 120, 170), Color3.fromRGB(250, 250, 250), Color3.fromRGB(190, 120, 255), nil }
+local function bush(parent: Instance, position: Vector3, scale: number?)
+	bushSeed += 1
+	return place(parent, JapaneseBuilder.Bush(scale or 1.2, bushSeed, BUSH_FLOWERS[bushSeed % #BUSH_FLOWERS + 1]), CFrame.new(position))
 end
 
 ------------------------------------------------------------------------------------------------
@@ -431,6 +436,23 @@ local function buildDojo(world: Instance)
 	roof.Name = "DojoRoof"
 	JapaneseBuilder.Roof(roof, CFrame.new(o + Vector3.new(0, 24.5, -10)), 112, 88, 12, c(55, 58, 70), true)
 	roof.Parent = folder
+	-- hanging paper lanterns light up the training hall
+	for _, x in { -32, 0, 32 } do
+		for _, z in { -38, -20, -2, 16 } do
+			local lanternPos = o + Vector3.new(x, 17, z)
+			part(folder, { Name = "Rope", Size = Vector3.new(0.15, 6, 0.15), Position = lanternPos + Vector3.new(0, 4, 0), Color = c(40, 30, 25), CanCollide = false })
+			local lamp = part(folder, { Name = "HallLantern", Size = Vector3.new(2, 2.6, 2), Position = lanternPos, Color = c(255, 220, 160), Material = Enum.Material.Neon, CanCollide = false })
+			local mesh = Instance.new("SpecialMesh")
+			mesh.MeshType = Enum.MeshType.Sphere
+			mesh.Parent = lamp
+			local light = Instance.new("PointLight")
+			light.Color = c(255, 215, 170)
+			light.Range = 30
+			light.Brightness = 2.2
+			light.Shadows = false
+			light.Parent = lamp
+		end
+	end
 	for _, x in { -40, 40 } do
 		for _, z in { -46, 24 } do
 			lantern(folder, o + Vector3.new(x, 1, z), 1)
@@ -574,8 +596,17 @@ local function buildLake(world: Instance)
 	local terrain = workspace.Terrain
 	local center = LAKE_CENTER
 	-- terrain water (real waves + reflections) on a sandy bed
+	terrain:FillCylinder(CFrame.new(center.X, -4, center.Z), 8, LAKE_RADIUS, Enum.Material.Air)
 	terrain:FillCylinder(CFrame.new(center.X, -6.5, center.Z), 3, LAKE_RADIUS + 2, Enum.Material.Sand)
-	terrain:FillCylinder(CFrame.new(center.X, -2.5, center.Z), 5, LAKE_RADIUS, Enum.Material.Water)
+	terrain:FillCylinder(CFrame.new(center.X, -2.75, center.Z), 4.5, LAKE_RADIUS, Enum.Material.Water) -- surface just below the shore
+	-- reeds along the water's edge, bushes on the shore
+	for k = 0, 11 do
+		local a = k / 12 * math.pi * 2 + 0.25
+		if math.abs(math.sin(a)) > 0.3 then
+			place(folder, JapaneseBuilder.Reeds(2.5, k), CFrame.new(center + Vector3.new(math.cos(a) * (LAKE_RADIUS - 2), -0.5, math.sin(a) * (LAKE_RADIUS - 2))))
+			bush(folder, center + Vector3.new(math.cos(a + 0.2) * (LAKE_RADIUS + 4), 0, math.sin(a + 0.2) * (LAKE_RADIUS + 4)), 1.3)
+		end
+	end
 	-- stone shore
 	local stones = math.floor(LAKE_RADIUS * 2.2)
 	local rng = Random.new(5)
@@ -681,8 +712,74 @@ local function buildFences(world: Instance)
 		-- south road (x = 0, z 42 .. 118)
 		fence(folder, Vector3.new(sx * 9, 0, 42), Vector3.new(sx * 9, 0, 114))
 	end
+	-- village road: north side closed, south side open at the link road and every plot entrance
+	fence(folder, Vector3.new(-14, 0, 114.5), Vector3.new(-300, 0, 114.5))
+	fence(folder, Vector3.new(-14, 0, 129.5), Vector3.new(-300, 0, 129.5), { { 57, 73 }, { 88, 104 }, { 144, 160 }, { 200, 216 }, { 256, 272 } })
 	-- cross road in front of the arenas: gaps for the three arena entrances and the north road
 	fence(folder, Vector3.new(-230, 0, -133), Vector3.new(230, 0, -133), { { 44, 76 }, { 205, 255 }, { 384, 416 } })
+end
+
+local function lanternString(parent: Instance, a: Vector3, b: Vector3, count: number)
+	local mid = (a + b) / 2
+	part(parent, { Name = "LanternRope", Size = Vector3.new(0.12, 0.12, (b - a).Magnitude), CFrame = CFrame.lookAt(mid, b), Color = c(40, 30, 25), CanCollide = false })
+	for i = 1, count do
+		local pos = a:Lerp(b, i / (count + 1)) - Vector3.new(0, 1.1, 0)
+		local lamp = part(parent, { Name = "StringLantern", Size = Vector3.new(1, 1.4, 1), Position = pos, Color = c(225, 40, 35), Material = Enum.Material.Neon, CanCollide = false })
+		local mesh = Instance.new("SpecialMesh")
+		mesh.MeshType = Enum.MeshType.Sphere
+		mesh.Parent = lamp
+		if i % 2 == 1 then
+			local light = Instance.new("PointLight")
+			light.Color = c(255, 90, 60)
+			light.Range = 10
+			light.Brightness = 1
+			light.Parent = lamp
+		end
+	end
+end
+
+local function buildRoadside(world: Instance)
+	local folder = Instance.new("Folder")
+	folder.Name = "Roadside"
+	folder.Parent = world
+	local k = 0
+	local function roadside(position: Vector3, yaw: number)
+		k += 1
+		if k % 2 == 0 then
+			place(folder, JapaneseBuilder.StoneLantern(1.8), CFrame.new(position) * CFrame.Angles(0, yaw, 0)) -- tall kasuga lantern
+		else
+			place(folder, JapaneseBuilder.RedLanternPost(11), CFrame.new(position) * CFrame.Angles(0, yaw, 0))
+		end
+		bush(folder, position + Vector3.new(rng(-3, 3), 0, rng(-3, 3)), 1)
+	end
+	for _, sx in { -1, 1 } do
+		for z = -50, -126, -19 do
+			roadside(Vector3.new(sx * 13.5, 0, z), 0)
+		end
+		for x = 50, 128, 19.5 do
+			roadside(Vector3.new(sx * x, 0, 13.5), math.pi / 2)
+			roadside(Vector3.new(sx * x, 0, -13.5), math.pi / 2)
+		end
+		for z = 50, 110, 20 do
+			roadside(Vector3.new(sx * 13.5, 0, z), 0)
+		end
+	end
+	-- strings of red lanterns over the roads leaving the plaza
+	for _, z in { -60, -95, -125 } do
+		place(folder, JapaneseBuilder.RedLanternPost(12), CFrame.new(-10.5, 0, z))
+		place(folder, JapaneseBuilder.RedLanternPost(12), CFrame.new(10.5, 0, z))
+		lanternString(folder, Vector3.new(-10.5, 11.6, z), Vector3.new(10.5, 11.6, z), 5)
+	end
+	for _, x in { 60, -60 } do
+		place(folder, JapaneseBuilder.RedLanternPost(12), CFrame.new(x, 0, -10.5) * CFrame.Angles(0, math.pi / 2, 0))
+		place(folder, JapaneseBuilder.RedLanternPost(12), CFrame.new(x, 0, 10.5) * CFrame.Angles(0, math.pi / 2, 0))
+		lanternString(folder, Vector3.new(x, 11.6, -10.5), Vector3.new(x, 11.6, 10.5), 5)
+	end
+	-- red lantern posts around the plaza
+	for i = 0, 3 do
+		local a = math.rad(i * 90 + 45)
+		place(folder, JapaneseBuilder.RedLanternPost(12), CFrame.new(math.cos(a) * 37, 0.6, math.sin(a) * 37) * CFrame.Angles(0, -a, 0))
+	end
 end
 
 local function buildScenery(world: Instance)
@@ -691,7 +788,7 @@ local function buildScenery(world: Instance)
 	folder.Parent = world
 	local rng = Random.new(42)
 	local fruitColors = { c(220, 40, 40), c(255, 140, 20), c(255, 225, 70), nil :: Color3? }
-	for _ = 1, 46 do
+	for _ = 1, 80 do
 		local x = rng:NextNumber(-300, 300)
 		local z = rng:NextNumber(-280, 300)
 		local clear = (math.abs(x) < 72 and math.abs(z) < 72) -- spawn plaza + pagoda / pond / garden
@@ -717,6 +814,18 @@ local function buildScenery(world: Instance)
 			end
 		end
 	end
+	-- Bushes everywhere that isn't a road / area
+	for _ = 1, 90 do
+		local x, z = rng:NextNumber(-310, 310), rng:NextNumber(-300, 310)
+		local onRoad = math.abs(x) < 16 or math.abs(z) < 16 or math.abs(z + 142) < 12 or (math.abs(z - 122) < 12 and x < 10)
+		local inArea = (math.abs(x) < 45 and math.abs(z) < 45) or (z < -125 and z > -260 and math.abs(x) < 240) or (math.abs(x - 190) < 58 and math.abs(z) < 58)
+			or (math.abs(x + 190) < 52 and math.abs(z) < 52) or (math.abs(x) < 50 and math.abs(z - 170) < 50) or (x < -70 and x > -315 and z > 105 and z < 268)
+			or ((Vector2.new(x, z) - Vector2.new(LAKE_CENTER.X, LAKE_CENTER.Z)).Magnitude < LAKE_RADIUS + 3)
+		if not onRoad and not inArea then
+			bush(folder, Vector3.new(x, 0, z), rng:NextNumber(0.9, 1.6))
+		end
+	end
+
 	-- Map border (invisible walls so nobody falls off)
 	for _, data in { { Vector3.new(0, 25, -330), Vector3.new(700, 50, 2) }, { Vector3.new(0, 25, 330), Vector3.new(700, 50, 2) }, { Vector3.new(-330, 25, 0), Vector3.new(2, 50, 700) }, { Vector3.new(330, 25, 0), Vector3.new(2, 50, 700) } } do
 		part(folder, { Name = "Border", Position = data[1], Size = data[2], Transparency = 1 })
@@ -822,6 +931,7 @@ function WorldBuilder.Init()
 	buildLake(world)
 	buildDecorHouses(world)
 	buildFences(world)
+	buildRoadside(world)
 	buildScenery(world)
 	-- Under flat floors (plazas, arenas, dojo, shops...) use bare terrain so grass blades can't poke through
 	for _, d in world:GetDescendants() do

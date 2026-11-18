@@ -300,6 +300,110 @@ function JapaneseBuilder.Bridge(width: number?, length: number?): Model
 	return model
 end
 
+-- Massive tree: thick tapered trunk with roots, several long branches, big foliage clusters.
+function JapaneseBuilder.BigTree(scale: number?, seed: number?, leafColors: { Color3 }?): Model
+	local s = scale or 1
+	local rng = Random.new(seed or 1)
+	local model = newModel("BigTree", 10 * s, 10 * s)
+	local bark = c(95, 65, 45)
+	local leaves = leafColors or { c(70, 150, 60), c(85, 165, 70), c(60, 135, 55), c(100, 175, 80) }
+	-- roots
+	for i = 0, 4 do
+		local a = math.rad(i * 72 + rng:NextNumber(-15, 15))
+		part(model, CFrame.Angles(0, a, 0) * CFrame.new(0, 0.9 * s, -1.9 * s), Vector3.new(1 * s, 1.8 * s, 2.4 * s), bark, Enum.Material.Wood, "Wedge", false)
+	end
+	-- trunk (two tapered pieces with a slight lean)
+	local lean = rng:NextNumber(-6, 6)
+	part(model, CFrame.new(0, 5 * s, 0) * CFrame.Angles(0, 0, math.rad(90 + lean)), Vector3.new(10 * s, 2.8 * s, 2.8 * s), bark, Enum.Material.Wood, "Cylinder")
+	local topY = 10 * s
+	local topX = -math.sin(math.rad(lean)) * 10 * s
+	part(model, CFrame.new(topX * 0.9, 13 * s, 0) * CFrame.Angles(0, 0, math.rad(90 - lean)), Vector3.new(7 * s, 2 * s, 2 * s), bark, Enum.Material.Wood, "Cylinder", false)
+	-- branches + foliage clusters at their ends
+	local branchCount = rng:NextInteger(5, 7)
+	for i = 1, branchCount do
+		local yaw = (i / branchCount) * math.pi * 2 + rng:NextNumber(-0.3, 0.3)
+		local pitch = math.rad(rng:NextNumber(30, 55))
+		local length = rng:NextNumber(6, 9) * s
+		local startPos = Vector3.new(topX * 0.7, topY + rng:NextNumber(0, 5) * s, 0)
+		local direction = Vector3.new(math.cos(yaw) * math.cos(pitch), math.sin(pitch), math.sin(yaw) * math.cos(pitch))
+		local endPos = startPos + direction * length
+		local mid = (startPos + endPos) / 2
+		part(model, CFrame.lookAt(mid, endPos) * CFrame.Angles(0, math.rad(90), 0), Vector3.new(length, 0.9 * s, 0.9 * s), bark, Enum.Material.Wood, "Cylinder", false)
+		for k = 1, 3 do
+			local size = rng:NextNumber(5, 7.5) * s
+			local offset = Vector3.new(rng:NextNumber(-2, 2), rng:NextNumber(-0.5, 2), rng:NextNumber(-2, 2)) * s
+			part(model, CFrame.new(endPos + offset), Vector3.one * size, leaves[rng:NextInteger(1, #leaves)], Enum.Material.Grass, "Ball", false)
+		end
+	end
+	-- crown
+	for k = 1, 3 do
+		part(model, CFrame.new(topX + rng:NextNumber(-2, 2) * s, topY + 9 * s + k * 1.5 * s, rng:NextNumber(-2, 2) * s), Vector3.one * rng:NextNumber(7, 9) * s,
+			leaves[rng:NextInteger(1, #leaves)], Enum.Material.Grass, "Ball", false)
+	end
+	return model
+end
+
+-- Round bush made of a few overlapping balls, optionally with flowers (azalea style).
+function JapaneseBuilder.Bush(scale: number?, seed: number?, flowerColor: Color3?): Model
+	local s = scale or 1
+	local rng = Random.new(seed or 2)
+	local model = newModel("Bush", 4 * s, 4 * s)
+	local green = c(rng:NextInteger(55, 80), rng:NextInteger(130, 160), rng:NextInteger(50, 65))
+	for _ = 1, 4 do
+		local size = rng:NextNumber(1.8, 2.8) * s
+		local pos = Vector3.new(rng:NextNumber(-1, 1) * s, size * 0.35, rng:NextNumber(-1, 1) * s)
+		part(model, CFrame.new(pos), Vector3.one * size, green, Enum.Material.Grass, "Ball", false)
+	end
+	if flowerColor then
+		for _ = 1, 9 do
+			local a = rng:NextNumber(0, math.pi * 2)
+			local r = rng:NextNumber(0.6, 1.5) * s
+			part(model, CFrame.new(math.cos(a) * r, rng:NextNumber(1, 2) * s, math.sin(a) * r), Vector3.one * 0.45 * s, flowerColor, nil, "Ball", false)
+		end
+	end
+	return model
+end
+
+-- Cluster of reeds / cattails for lake shores.
+function JapaneseBuilder.Reeds(radius: number?, seed: number?): Model
+	local r = radius or 2.5
+	local rng = Random.new(seed or 4)
+	local model = newModel("Reeds", r * 2, r * 2)
+	for _ = 1, math.floor(r * 6) do
+		local x, z = rng:NextNumber(-r, r), rng:NextNumber(-r, r)
+		local h = rng:NextNumber(3, 5.5)
+		local tilt = CFrame.Angles(math.rad(rng:NextNumber(-8, 8)), 0, math.rad(rng:NextNumber(-8, 8)))
+		local base = CFrame.new(x, 0, z) * tilt
+		part(model, base * CFrame.new(0, h / 2, 0) * CFrame.Angles(0, 0, math.rad(90)), Vector3.new(h, 0.15, 0.15), c(110, 150, 70), nil, "Cylinder", false)
+		if rng:NextNumber() < 0.5 then
+			part(model, base * CFrame.new(0, h - 0.4, 0) * CFrame.Angles(0, 0, math.rad(90)), Vector3.new(0.9, 0.32, 0.32), c(110, 70, 40), nil, "Cylinder", false)
+		end
+	end
+	return model
+end
+
+-- Tall wooden post with a crossbar and two glowing red paper lanterns.
+function JapaneseBuilder.RedLanternPost(height: number?): Model
+	local h = height or 11
+	local model = newModel("RedLanternPost", 2, 2)
+	post(model, Vector3.new(0, h / 2, 0), h, 0.5, COL.DarkWood, Enum.Material.Wood)
+	part(model, CFrame.new(0, h - 0.6, 0), Vector3.new(4.4, 0.35, 0.35), COL.DarkWood, Enum.Material.Wood, nil, false)
+	part(model, CFrame.new(0, h + 0.1, 0), Vector3.new(1.2, 0.4, 1.2), COL.Black, nil, nil, false)
+	for _, sx in { -1, 1 } do
+		local lanternPos = Vector3.new(sx * 1.8, h - 2.1, 0)
+		part(model, CFrame.new(lanternPos + Vector3.new(0, 0.95, 0)), Vector3.new(0.1, 0.6, 0.1), COL.Black, nil, nil, false)
+		local lantern = part(model, CFrame.new(lanternPos), Vector3.new(1.3, 1.7, 1.3), c(220, 35, 30), Enum.Material.Neon, nil, false)
+		lantern.Transparency = 0.05
+		local mesh = Instance.new("SpecialMesh")
+		mesh.MeshType = Enum.MeshType.Sphere
+		mesh.Parent = lantern
+		part(model, CFrame.new(lanternPos + Vector3.new(0, 0.9, 0)), Vector3.new(0.8, 0.15, 0.8), COL.Black, nil, nil, false)
+		part(model, CFrame.new(lanternPos - Vector3.new(0, 0.9, 0)), Vector3.new(0.8, 0.15, 0.8), COL.Black, nil, nil, false)
+		light(lantern, c(255, 90, 60), 14, 1.3)
+	end
+	return model
+end
+
 ------------------------------------------------------------------------------------------------
 -- Buildings
 ------------------------------------------------------------------------------------------------
