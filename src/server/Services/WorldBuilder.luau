@@ -937,7 +937,25 @@ local function setupLighting()
 	end
 end
 
+-- Your own map decorations: everything inside Workspace.MyDecor (assets/Map/*.rbxm with Rojo) is
+-- anchored so it can't fall, and any scripts inside downloaded models are removed for safety.
+local function prepareMyDecor()
+	local decor = workspace:FindFirstChild("MyDecor")
+	if not decor then
+		return
+	end
+	for _, d in decor:GetDescendants() do
+		if d:IsA("BasePart") then
+			d.Anchored = true
+		elseif d:IsA("Script") or d:IsA("LocalScript") then
+			warn("[WorldBuilder] Removed a script from MyDecor: " .. d:GetFullName())
+			d:Destroy()
+		end
+	end
+end
+
 function WorldBuilder.Init()
+	prepareMyDecor()
 	setupLighting()
 	if workspace:FindFirstChild("FNS_World") then
 		return -- a saved / hand-edited copy exists: use it as-is

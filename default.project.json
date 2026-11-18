@@ -1,6 +1,8 @@
 {
   "name": "FruitNinjaSimulator",
-  "globIgnorePaths": ["**/.gitkeep"],
+  "globIgnorePaths": [
+    "**/.gitkeep"
+  ],
   "tree": {
     "$className": "DataModel",
     "ReplicatedStorage": {
@@ -21,6 +23,11 @@
         "Client": {
           "$path": "src/client"
         }
+      }
+    },
+    "Workspace": {
+      "MyDecor": {
+        "$path": "assets/Map"
       }
     }
   }
