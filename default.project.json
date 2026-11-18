@@ -27,7 +27,7 @@
     },
     "Workspace": {
       "MyDecor": {
-        "$path": "assets/Map"
+        "$path": "map"
       }
     }
   }

@@ -937,7 +937,7 @@ local function setupLighting()
 	end
 end
 
--- Your own map decorations: everything inside Workspace.MyDecor (assets/Map/*.rbxm with Rojo) is
+-- Your own map decorations: everything inside Workspace.MyDecor (map/*.rbxm with Rojo) is
 -- anchored so it can't fall, and any scripts inside downloaded models are removed for safety.
 local function prepareMyDecor()
 	local decor = workspace:FindFirstChild("MyDecor")
